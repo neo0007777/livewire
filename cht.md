@@ -75,3 +75,15 @@
   - Initialized `BUILD_LOG.md`.
   - Staged and made initial commit `step-00: repo scaffold`.
 - Prepared for **Step 1**: Prompting user for service credentials (Supabase, LiveKit, Expo).
+
+
+---
+
+### Turn 6: Foundation & Mobile Setup (Steps 2, 3, 4)
+**User:**
+> "now let's start the next step"
+
+**Action Taken:**
+- **Step 2 (Database Migration):** Authored `backend/supabase/migrations/20261116000000_init_schema.sql` covering tables (`profiles`, `streams`, `chat_messages`, `stream_milestones`, `notifications`, `stream_highlights`), RLS security policies, rate-limiting triggers, and RPC procedures (`start_stream`, `end_stream`, `report_viewer_count`).
+- **Step 3 (Mobile Architecture):** Generated Expo Router app in `/mobile` with Expo SDK 58. Configured `app.json`, `eas.json`, and installed LiveKit WebRTC, Supabase JS, and state management dependencies.
+- **Step 4 (Auth & Navigation):** Built Zustand session store, Auth gate, `sign-in`, `sign-up`, Tab navigation, Profile, and Live stream browser. Verified with `npx tsc --noEmit` (clean build).
