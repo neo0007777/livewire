@@ -23,3 +23,18 @@
 - Fixed: Replaced `null` with `undefined` to satisfy VirtualizedListProps.
 - Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors.
 - Time spent: 1.0 h
+
+
+## Steps 6, 7, 8, 9 — Creator Broadcast, Viewer Watch, Realtime Chat & Presence — 2026-11-16
+- Did:
+  - Built LiveKit SFU components (`LocalPreview.tsx`, `RemoteStage.tsx`, `ViewerBadge.tsx`, `ChatPanel.tsx`).
+  - Created `useStreamChannel.ts` subscribing to `stream:{id}` channel for chat messages, presence synchronization, and stream status changes.
+  - Built `useChat.ts` with optimistic UI, client UUID idempotency, gap filling on reconnect (`lastSeq - 20`), and rate-limit error handling.
+  - Implemented `usePresenceCount.ts` with Supabase Presence tracking distinct viewers and periodic 5s heartbeat (`report_viewer_count`).
+  - Implemented Creator Broadcast screen (`broadcast/[id].tsx`) with LiveKit room publish, confirmation end-stream flow, and hardware back button trap.
+  - Implemented Viewer Watch screen (`watch/[id].tsx`) with subscribe-only LiveKit stream, follow toggling, chat panel overlay, and stream ended state.
+  - Implemented Stream Summary screen (`summary/[id].tsx`) showing peak viewers, duration, and real-time subscription to n8n highlights.
+- Broke: TypeScript errors regarding `StyleSheet.absoluteFillObject` vs `absoluteFill` in RN 0.88 and `LiveKitRoom` style prop placement.
+- Fixed: Replaced `absoluteFillObject` with `absoluteFill` and placed flex styles on inner container view.
+- Acceptance: PASS — `npx tsc --noEmit` verified with 0 errors across the entire Phase 1 codebase.
+- Time spent: 1.5 h

@@ -87,3 +87,16 @@
 - **Step 2 (Database Migration):** Authored `backend/supabase/migrations/20261116000000_init_schema.sql` covering tables (`profiles`, `streams`, `chat_messages`, `stream_milestones`, `notifications`, `stream_highlights`), RLS security policies, rate-limiting triggers, and RPC procedures (`start_stream`, `end_stream`, `report_viewer_count`).
 - **Step 3 (Mobile Architecture):** Generated Expo Router app in `/mobile` with Expo SDK 58. Configured `app.json`, `eas.json`, and installed LiveKit WebRTC, Supabase JS, and state management dependencies.
 - **Step 4 (Auth & Navigation):** Built Zustand session store, Auth gate, `sign-in`, `sign-up`, Tab navigation, Profile, and Live stream browser. Verified with `npx tsc --noEmit` (clean build).
+
+
+---
+
+### Turn 7: Implementation of Phase 1 (Steps 6, 7, 8, 9)
+**Action Taken:**
+- Implemented **Phase 1 core functionality**:
+  - **Live Streaming UI:** `<LocalPreview>` (creator camera) and `<RemoteStage>` (viewer WebRTC stage) powered by `@livekit/react-native`.
+  - **Broadcast Screen (`broadcast/[id].tsx`):** Publishes camera/mic, tracks presence viewer count, broadcasts heartbeat every 5s, provides confirmation dialog on end stream.
+  - **Watch Screen (`watch/[id].tsx`):** Subscribes to live stream, renders creator video with sub-second latency, supports creator following, real-time presence counting, and handles stream-ended state.
+  - **Real-Time Chat Engine (`useChat.ts`, `ChatPanel.tsx`):** Server sequence ordering, client-generated UUID primary keys for deduplication, optimistic messages, rate limiting, and reconnect gap-filling.
+  - **Presence & Heartbeat (`usePresenceCount.ts`, `ViewerBadge.tsx`):** Single-writer reporting via `report_viewer_count` RPC.
+  - Verified full TypeScript compilation clean with 0 errors.
