@@ -21,6 +21,7 @@ import { usePresenceCount } from '../../../hooks/usePresenceCount';
 
 export default function BroadcastScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const streamId = Array.isArray(id) ? id[0] : (id || '');
   const router = useRouter();
   const { session } = useSessionStore();
   const [tokenData, setTokenData] = useState<LiveKitTokenResponse | null>(null);
@@ -35,18 +36,18 @@ export default function BroadcastScreen() {
     handleIncomingMessage,
     handleStreamUpdate,
     fillGaps,
-  } = useChat(id);
+  } = useChat(streamId);
 
   // Presence viewer count hook
   const { viewerCount, updateFromPresence } = usePresenceCount({
-    streamId: id,
+    streamId,
     creatorId: session?.user?.id || '',
     isCreator: true,
   });
 
   // Stream channel hook
   const { status: channelStatus } = useStreamChannel({
-    streamId: id,
+    streamId,
     isCreator: true,
     onNewMessage: handleIncomingMessage,
     onStreamUpdate: handleStreamUpdate,
@@ -61,10 +62,10 @@ export default function BroadcastScreen() {
 
   // Load LiveKit token
   useEffect(() => {
-    if (!id) return;
+    if (!streamId) return;
 
     let isMounted = true;
-    fetchLiveKitToken(id)
+    fetchLiveKitToken(streamId)
       .then((res) => {
         if (isMounted) {
           setTokenData(res);
@@ -81,7 +82,7 @@ export default function BroadcastScreen() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [streamId]);
 
   // Confirm End Stream
   const confirmEnd = useCallback(() => {
@@ -93,16 +94,16 @@ export default function BroadcastScreen() {
         onPress: async () => {
           setIsEnding(true);
           try {
-            await endStream(id);
+            await endStream(streamId);
           } catch (err) {
             // End stream handled
           } finally {
-            router.replace(`/(app)/summary/${id}`);
+            router.replace(`/(app)/summary/${streamId}`);
           }
         },
       },
     ]);
-  }, [id, router]);
+  }, [streamId, router]);
 
   // Intercept Android hardware back button
   useEffect(() => {

@@ -13,20 +13,33 @@ export function usePresenceCount({ streamId, creatorId, isCreator }: UsePresence
   const countRef = useRef<number>(0);
   const creatorIdRef = useRef(creatorId);
   creatorIdRef.current = creatorId;
+  const lastChannelRef = useRef<RealtimeChannel | null>(null);
+
+  const cleanStreamId = Array.isArray(streamId) ? streamId[0] : streamId;
 
   const updateFromPresence = useCallback((channel: RealtimeChannel) => {
-    const state = channel.presenceState<{ role?: 'creator' | 'viewer' }>();
+    lastChannelRef.current = channel;
+    const state = channel.presenceState<{ role?: 'creator' | 'viewer'; user_id?: string }>();
     const count = Object.entries(state).filter(([key, metas]) => {
+      // Exclude creator by presence key suffix
+      if (key.endsWith(':creator')) return false;
       // Exclude creator by ID if known
-      if (creatorIdRef.current && key === creatorIdRef.current) return false;
-      // Exclude creator by role
-      if (metas.some((m) => m?.role === 'creator')) return false;
+      if (creatorIdRef.current && (key === creatorIdRef.current || key.startsWith(`${creatorIdRef.current}:`))) return false;
+      // Exclude creator by role or metadata user_id
+      if (metas.some((m) => m?.role === 'creator' || (creatorIdRef.current && m?.user_id === creatorIdRef.current))) return false;
       return true;
     }).length;
 
     countRef.current = count;
     setViewerCount(count);
   }, []);
+
+  // When creatorId arrives (e.g. async fetch), re-evaluate existing presence state
+  useEffect(() => {
+    if (lastChannelRef.current) {
+      updateFromPresence(lastChannelRef.current);
+    }
+  }, [creatorId, updateFromPresence]);
 
   // Sync count from streams table database updates
   const updateFromStream = useCallback((stream: { current_viewers?: number }) => {
@@ -38,12 +51,12 @@ export function usePresenceCount({ streamId, creatorId, isCreator }: UsePresence
 
   // Creator persists presence count & updates heartbeat every 5s
   useEffect(() => {
-    if (!isCreator || !streamId) return;
+    if (!isCreator || !cleanStreamId) return;
 
     const report = async () => {
       try {
         await supabase.rpc('report_viewer_count', {
-          p_stream_id: streamId,
+          p_stream_id: cleanStreamId,
           p_count: countRef.current,
         });
       } catch (err) {
@@ -55,7 +68,7 @@ export function usePresenceCount({ streamId, creatorId, isCreator }: UsePresence
     const interval = setInterval(report, 5000);
 
     return () => clearInterval(interval);
-  }, [isCreator, streamId]);
+  }, [isCreator, cleanStreamId]);
 
   return {
     viewerCount,

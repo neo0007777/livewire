@@ -21,6 +21,7 @@ import { usePresenceCount } from '../../../hooks/usePresenceCount';
 
 export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const streamId = Array.isArray(id) ? id[0] : (id || '');
   const router = useRouter();
   const { session } = useSessionStore();
   const [tokenData, setTokenData] = useState<LiveKitTokenResponse | null>(null);
@@ -37,11 +38,11 @@ export default function WatchScreen() {
     handleIncomingMessage,
     handleStreamUpdate,
     fillGaps,
-  } = useChat(id);
+  } = useChat(streamId);
 
   // Presence count hook
   const { viewerCount, updateFromPresence, updateFromStream } = usePresenceCount({
-    streamId: id,
+    streamId,
     creatorId: streamInfo?.creator_id || '',
     isCreator: false,
   });
@@ -53,7 +54,7 @@ export default function WatchScreen() {
 
   // Stream channel hook
   const { status: channelStatus } = useStreamChannel({
-    streamId: id,
+    streamId,
     isCreator: false,
     onNewMessage: handleIncomingMessage,
     onStreamUpdate: handleMergedStreamUpdate,
@@ -68,12 +69,12 @@ export default function WatchScreen() {
 
   // Load stream info & follow status
   useEffect(() => {
-    if (!id || !session?.user?.id) return;
+    if (!streamId || !session?.user?.id) return;
 
     supabase
       .from('streams')
       .select('id, creator_id, title, status, current_viewers, started_at, creator:profiles(display_name)')
-      .eq('id', id)
+      .eq('id', streamId)
       .single()
       .then(({ data, error }) => {
         if (!error && data) {
@@ -91,7 +92,7 @@ export default function WatchScreen() {
             });
         }
       });
-  }, [id, session?.user?.id]);
+  }, [streamId, session?.user?.id]);
 
   // Toggle follow creator
   const toggleFollow = async () => {
@@ -115,10 +116,10 @@ export default function WatchScreen() {
 
   // Load LiveKit subscribe token
   useEffect(() => {
-    if (!id) return;
+    if (!streamId) return;
 
     let isMounted = true;
-    fetchLiveKitToken(id)
+    fetchLiveKitToken(streamId)
       .then((res) => {
         if (isMounted) {
           setTokenData(res);
@@ -135,7 +136,7 @@ export default function WatchScreen() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [streamId]);
 
   if (loading) {
     return (
@@ -195,7 +196,7 @@ export default function WatchScreen() {
                 <Text style={styles.endedSubtitle}>Thank you for tuning in!</Text>
                 <TouchableOpacity
                   style={styles.summaryLinkButton}
-                  onPress={() => router.replace(`/(app)/summary/${id}`)}
+                  onPress={() => router.replace(`/(app)/summary/${streamId}`)}
                 >
                   <Text style={styles.summaryLinkText}>View Stream Recap</Text>
                 </TouchableOpacity>

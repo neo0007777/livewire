@@ -32,13 +32,23 @@ export function useStreamChannel({
   const onPresenceSyncRef = useRef(onPresenceSync);
   onPresenceSyncRef.current = onPresenceSync;
 
-  useEffect(() => {
-    if (!streamId || !session?.user?.id) return;
+  const cleanStreamId = Array.isArray(streamId) ? streamId[0] : streamId;
 
-    const channelName = `stream:${streamId}`;
+  useEffect(() => {
+    if (!cleanStreamId || !session?.user?.id) return;
+
+    const channelName = `stream:${cleanStreamId}`;
+
+    // Clean up any existing channel with this name to prevent "cannot add callbacks after subscribe" error
+    const existing = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+
+    const presenceKey = `${session.user.id}:${isCreator ? 'creator' : 'viewer'}`;
     const channel = supabase.channel(channelName, {
       config: {
-        presence: { key: session.user.id },
+        presence: { key: presenceKey },
       },
     });
 
@@ -51,7 +61,7 @@ export function useStreamChannel({
         event: 'INSERT',
         schema: 'public',
         table: 'chat_messages',
-        filter: `stream_id=eq.${streamId}`,
+        filter: `stream_id=eq.${cleanStreamId}`,
       },
       (payload) => {
         onNewMessageRef.current?.(payload.new);
@@ -65,7 +75,7 @@ export function useStreamChannel({
         event: 'UPDATE',
         schema: 'public',
         table: 'streams',
-        filter: `id=eq.${streamId}`,
+        filter: `id=eq.${cleanStreamId}`,
       },
       (payload) => {
         onStreamUpdateRef.current?.(payload.new);
@@ -84,22 +94,24 @@ export function useStreamChannel({
     channel.subscribe(async (status) => {
       setChannelStatus(status);
       if (status === 'SUBSCRIBED') {
-        await channel.track({
-          role: isCreator ? 'creator' : 'viewer',
-          joined_at: new Date().toISOString(),
-        });
-        // Immediately sync presence after tracking
+        try {
+          await channel.track({
+            role: isCreator ? 'creator' : 'viewer',
+            user_id: session.user.id,
+            joined_at: new Date().toISOString(),
+          });
+        } catch (e) {
+          // Track handled
+        }
         handlePresence();
       }
     });
 
     return () => {
-      channel.untrack().finally(() => {
-        supabase.removeChannel(channel);
-      });
+      supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [streamId, session?.user?.id, isCreator]);
+  }, [cleanStreamId, session?.user?.id, isCreator]);
 
   return {
     channel: channelRef.current,
