@@ -13,7 +13,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [160, 300],
+      "position": [
+        160,
+        300
+      ],
       "webhookId": "stream-ended",
       "credentials": {
         "httpHeaderAuth": {
@@ -31,7 +34,10 @@
       "name": "Wait 5 Seconds",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [360, 300],
+      "position": [
+        360,
+        300
+      ],
       "webhookId": "wait-ended-settle"
     },
     {
@@ -45,7 +51,10 @@
       "name": "Load Stream and Chat Input",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [560, 300],
+      "position": [
+        560,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase-pooler-cred",
@@ -61,7 +70,10 @@
       "name": "Code - Find Moments",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [760, 300]
+      "position": [
+        760,
+        300
+      ]
     },
     {
       "parameters": {
@@ -79,7 +91,10 @@
       "name": "Check Message Threshold",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 300]
+      "position": [
+        960,
+        300
+      ]
     },
     {
       "parameters": {
@@ -110,7 +125,10 @@
       "name": "Generate AI Recap",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1180, 200],
+      "position": [
+        1180,
+        200
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "anthropic-cred",
@@ -120,13 +138,16 @@
     },
     {
       "parameters": {
-        "jsCode": "const base = $('Code - Find Moments').first().json;\nconst r = $input.first().json || {};\nconst textBlock = Array.isArray(r.content) ? r.content.find(b => b.type === 'text') : null;\nconst ok = r.stop_reason !== 'refusal' && textBlock && textBlock.text && textBlock.text.trim().length > 0;\nreturn [{ json: {\n  stream_id: base.stream_id,\n  moments: base.moments,\n  summary: ok ? textBlock.text.trim().slice(0, 1200) : base.rule_summary,\n  source: ok ? 'ai' : 'rule',\n} }];"
+        "jsCode": "const momentsNode = $('Code - Find Moments');\nconst base = (momentsNode && momentsNode.first() && momentsNode.first().json) ? momentsNode.first().json : {};\nconst inItem = $input.first();\nconst r = (inItem && inItem.json) ? inItem.json : {};\n\nlet textBlock = null;\nif (Array.isArray(r.content)) {\n  textBlock = r.content.find(b => b && b.type === 'text');\n}\n\nconst ok = r.stop_reason !== 'refusal' && textBlock && textBlock.text && textBlock.text.trim().length > 0;\nreturn [{ json: {\n  stream_id: base.stream_id || r.stream_id,\n  moments: base.moments || r.moments || [],\n  summary: ok ? textBlock.text.trim().slice(0, 1200) : (base.rule_summary || r.rule_summary || 'Stream concluded successfully.'),\n  source: ok ? 'ai' : 'rule',\n} }];"
       },
       "id": "code-pick-summary",
       "name": "Code - Pick Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1400, 300]
+      "position": [
+        1400,
+        300
+      ]
     },
     {
       "parameters": {
@@ -139,7 +160,10 @@
       "name": "Save Highlight in DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1600, 300],
+      "position": [
+        1600,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase-pooler-cred",
@@ -158,7 +182,10 @@
       "name": "Notify Creator in DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1800, 300],
+      "position": [
+        1800,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase-pooler-cred",
@@ -174,7 +201,10 @@
       "name": "Build Expo Batch",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 300]
+      "position": [
+        2000,
+        300
+      ]
     },
     {
       "parameters": {
@@ -204,7 +234,10 @@
       "name": "Send Expo Push Notifications",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2200, 300]
+      "position": [
+        2200,
+        300
+      ]
     }
   ],
   "connections": {

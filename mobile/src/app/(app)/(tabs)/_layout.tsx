@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
+import { useInbox } from '../../../hooks/useInbox';
 
 export default function TabLayout() {
+  const { unreadCount } = useInbox();
+
   return (
     <Tabs
       screenOptions={{
@@ -35,6 +38,12 @@ export default function TabLayout() {
         options={{
           title: 'Inbox',
           tabBarLabel: 'Inbox',
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: '#EF4444',
+            fontSize: 10,
+            fontWeight: 'bold',
+          },
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>🔔</Text>,
         }}
       />

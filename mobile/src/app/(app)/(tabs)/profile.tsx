@@ -12,6 +12,13 @@ export default function ProfileScreen() {
         text: 'Sign Out',
         style: 'destructive',
         onPress: async () => {
+          if (session?.user?.id) {
+            try {
+              await supabase.from('push_tokens').delete().eq('user_id', session.user.id);
+            } catch (err) {
+              // Best-effort cleanup
+            }
+          }
           await supabase.auth.signOut();
           signOut();
         },

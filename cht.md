@@ -136,3 +136,31 @@
   - **Workflow Setup Guide (`n8n-workflow/README.md`):** Complete instructions for importing workflows and configuring credentials.
   - **In-App & Push Notification Architecture (`useInbox.ts`, `InAppBanner.tsx`, `push.ts`, `inbox.tsx`):** Real-time inbox feed, foreground toast banners, and Expo push token persistence.
   - Validated all 4 workflow JSON schemas and confirmed clean TypeScript compilation (`npx tsc --noEmit`).
+
+
+---
+
+### Turn 10: Deep Review & Codebase Audit
+**User:**
+> "check it and review it deeply"
+
+**Action Taken:**
+- Conducted an in-depth audit spanning the mobile app, Supabase database triggers/schema/RPCs, LiveKit edge function, and n8n workflows.
+- Evaluated security (RLS enforcement, auth tokens, client-side spoofing prevention), data integrity (monotonic sequence ordering, idempotency keys), and workflow edge cases.
+- Generated comprehensive review report in `deep-review.md` categorizing findings into Critical (3), Medium (5), and Minor (4).
+
+---
+
+### Turn 11: Production Hardening & Bug Fixes
+**User:**
+> "fix the bugs"
+
+**Action Taken:**
+- **App Entry (`src/app/index.tsx`):** Removed Expo placeholder text and implemented smart auth redirection (`/(app)/(tabs)` vs `/(auth)/sign-in`).
+- **Workflow Robustness (`03-stream-ended-highlights.json`):** Hardened `Code - Pick Summary` to prevent runtime TypeErrors and cleanly handle fallback between AI recap and rule summary on the IF false branch.
+- **Push Token Security (`profile.tsx`):** Added push token deletion on user sign-out to prevent notifications from leaking to subsequent device accounts.
+- **Inbox Tab Badge (`(tabs)/_layout.tsx`):** Wired `useInbox().unreadCount` to `tabBarBadge` on the navigation bar with unread count badge styling.
+- **Realtime Channel Isolation (`useInbox.ts`):** Gave each hook subscription instance a distinct channel identifier to prevent teardown collisions.
+- **Hardware Back Handler (`broadcast/[id].tsx`):** Wrapped `confirmEnd` in `useCallback` to prevent stale closure references during live broadcasts.
+- **Environment Protection (`mobile/.gitignore`):** Explicitly added `.env` and `.env.*` ignore rules.
+- **Verification:** Ran TypeScript compilation (`0 errors`) and Android production export (`1,738 modules bundled`).

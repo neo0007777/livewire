@@ -48,8 +48,9 @@ export function useInbox() {
   useEffect(() => {
     if (!session?.user?.id) return;
 
+    const channelId = `inbox:${session.user.id}:${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`inbox:${session.user.id}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
@@ -91,3 +92,4 @@ export function useInbox() {
     markAsRead,
   };
 }
+

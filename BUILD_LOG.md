@@ -71,3 +71,18 @@
 - Fixed: Added `shouldShowList: true` to `setNotificationHandler`.
 - Acceptance: PASS — JSON validation confirmed for all 4 workflows; TypeScript compilation clean with 0 errors.
 - Time spent: 1.5 h
+
+
+## Deep Review & Production Hardening — 2026-11-17
+- Did:
+  - Conducted comprehensive architecture, security, and logic audit of Mobile, Backend, and n8n Workflows.
+  - Resolved `src/app/index.tsx` Expo placeholder screen by routing directly to `/(app)/(tabs)` if authenticated or `/(auth)/sign-in` if not.
+  - Hardened `n8n-workflow/03-stream-ended-highlights.json` `Code - Pick Summary` to guard against undefined input items and properly handle AI vs Rule summary fallback on the IF false branch.
+  - Implemented push token cleanup in `profile.tsx` upon user sign-out (`supabase.from('push_tokens').delete().eq('user_id', session.user.id)`).
+  - Connected `useInbox` unread count to `(tabs)/_layout.tsx` `tabBarBadge` on the Inbox tab with badge styling.
+  - Hardened `useInbox.ts` to assign unique channel IDs per hook mount, avoiding duplicate channel teardown collisions.
+  - Stabilized `confirmEnd` in `broadcast/[id].tsx` with `useCallback` to prevent stale closure traps in Android `BackHandler`.
+  - Added `.env` and `.env.*` patterns to `mobile/.gitignore`.
+  - Verified bundle: `npx tsc --noEmit` passed with 0 errors; `npx expo export --platform android` compiled 1,738 modules cleanly into Hermes bytecode (`entry-*.hbc`).
+- Acceptance: PASS — All critical and medium audit findings resolved and verified.
+- Time spent: 0.5 h

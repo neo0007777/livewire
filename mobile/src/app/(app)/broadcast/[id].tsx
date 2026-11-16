@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -84,7 +84,7 @@ export default function BroadcastScreen() {
   }, [id]);
 
   // Confirm End Stream
-  const confirmEnd = () => {
+  const confirmEnd = useCallback(() => {
     Alert.alert('End Stream', 'Are you sure you want to conclude this live broadcast?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -102,7 +102,7 @@ export default function BroadcastScreen() {
         },
       },
     ]);
-  };
+  }, [id, router]);
 
   // Intercept Android hardware back button
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function BroadcastScreen() {
       return true;
     });
     return () => sub.remove();
-  }, [id]);
+  }, [confirmEnd]);
 
   if (loading) {
     return (
