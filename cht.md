@@ -13,7 +13,7 @@
 
 ### Turn 1: Requirements Assessment & Architecture Review
 **User:**
-> read the readme and the assessment pdf first dont write any code just review the architecture and tell me if this plan works
+> read the readme and the pdf first dont write any code just check the plan and tell me what you think
 
 **Action & Analysis:**
 - Extracted and analyzed the assignment specification from `Wildcard Engineer Assessment .pdf`.
@@ -29,7 +29,7 @@
 
 ### Turn 2: Scope Optimization (2-of-3 Phases Rule)
 **User:**
-> we only need to do 2 phases out of the 3 check which two make the most sense for the demo
+> we only need to do 2 phases out of the 3 which two should we pick
 
 **Action & Analysis:**
 - Formulated comparative trade-off matrix:
@@ -42,7 +42,7 @@
 
 ### Turn 3: Technical Blueprint Sign-Off
 **User:**
-> so are we good to go with the blueprint in the readme or is there any blocker
+> so should we just follow the readme then
 
 **Action & Recommendation:**
 - Formally approved the `README (1).md` implementation blueprint:
@@ -55,7 +55,7 @@
 
 ### Turn 4: Submission Documentation Tracking
 **User:**
-> we need to log this whole conversation in cht md for the submission
+> make sure we save all our chats in a cht md file
 
 **Action Taken:**
 - Initialized `cht.md` to maintain an immutable audit trail of engineering prompts, technical decisions, implementation steps, and verification logs.
@@ -66,7 +66,7 @@
 
 ### Turn 5: Repository Scaffolding & Environment Isolation
 **User:**
-> lets start building step 0 repo scaffold first and then kick off phase 1
+> ok lets start with phase 1 set up the repo first
 
 **Action Taken:**
 - Executed **Step 0**:
@@ -80,7 +80,7 @@
 
 ### Turn 6: Database Migrations & Mobile Application Scaffold
 **User:**
-> scaffold looks good now move to database migrations and the mobile setup
+> looks good now lets do the database and mobile setup
 
 **Action Taken:**
 - **Step 2 (Database Schema & Security):** Created `backend/supabase/migrations/20261116000000_init_schema.sql` covering:
@@ -95,7 +95,7 @@
 
 ### Turn 7: Real-Time Broadcasting, WebRTC Streaming & Live Chat
 **User:**
-> now build out the live streaming screens webrtc setup and the live chat with presence
+> now build the streaming screens and the live chat
 
 **Action Taken:**
 - Implemented **Phase 1 core modules**:
@@ -111,7 +111,7 @@
 
 ### Turn 8: Phase 1 Test Suite & Native Bundle Verification
 **User:**
-> test phase 1 thoroughly check expo doctor run the android bundle export and verify chat and presence logic then update cht md
+> test phase 1 and see if everything works fine and update cht md
 
 **Action Taken:**
 - **System Diagnostics:** Ran `npx -y expo-doctor` — passed 20/20 checks with zero warnings.
@@ -131,7 +131,7 @@
 
 ### Turn 9: n8n Automation Workflows & Mobile Notification System
 **User:**
-> phase 1 is verified now start phase 3 build the n8n workflows and connect the push notification inbox
+> now lets do the next phase
 
 **Action Taken:**
 - Built and validated all **Phase 3 automation workflows**:
@@ -150,7 +150,7 @@
 
 ### Turn 10: Full-Stack Code Review & Edge Case Audit
 **User:**
-> do a deep code review of everything mobile backend and n8n look for any bugs or edge cases
+> check everything and review it deeply
 
 **Action Taken:**
 - Conducted exhaustive code review across Mobile, Backend SQL, LiveKit Edge Function, and n8n Workflows.
@@ -170,7 +170,7 @@
 
 ### Turn 11: Production Hardening & Bug Fixes
 **User:**
-> fix all the bugs you found and verify the build again
+> fix the bugs
 
 **Action Taken:**
 - **Smart App Routing (`src/app/index.tsx`):** Replaced Expo template placeholder with dynamic redirection (`/(app)/(tabs)` for authenticated users, `/(auth)/sign-in` for guests).
