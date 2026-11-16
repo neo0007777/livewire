@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { ChatMessage } from '../hooks/useChat';
+import { supabase } from '../lib/supabase';
+import { useSessionStore } from '../stores/session';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -19,7 +21,72 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps) {
+  const { session, profile } = useSessionStore();
   const [input, setInput] = useState('');
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+
+  // Load who the current user follows
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    supabase
+      .from('follows')
+      .select('creator_id')
+      .eq('follower_id', session.user.id)
+      .then(({ data }) => {
+        if (data) {
+          setFollowedIds(new Set(data.map((f) => f.creator_id)));
+        }
+      });
+  }, [session?.user?.id]);
+
+  // Toggle follow user from chat
+  const handleToggleFollow = useCallback(
+    async (targetUserId: string, targetName: string) => {
+      if (!session?.user?.id || !targetUserId || targetUserId === session.user.id) return;
+
+      const isFollowing = followedIds.has(targetUserId);
+
+      if (isFollowing) {
+        setFollowedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(targetUserId);
+          return next;
+        });
+
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', session.user.id)
+          .eq('creator_id', targetUserId);
+      } else {
+        setFollowedIds((prev) => new Set(prev).add(targetUserId));
+
+        const { error } = await supabase.from('follows').insert({
+          follower_id: session.user.id,
+          creator_id: targetUserId,
+        });
+
+        if (!error) {
+          // Send real-time follower notification
+          try {
+            const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
+            await supabase.from('notifications').insert({
+              user_id: targetUserId,
+              type: 'new_follower',
+              title: 'New Follower!',
+              body: `${myName} started following you from live chat.`,
+              data: { follower_id: session.user.id },
+              dedupe_key: `follow:${session.user.id}:${targetUserId}:${Date.now()}`,
+            });
+          } catch (e) {
+            // Best-effort notification delivery
+          }
+        }
+      }
+    },
+    [session?.user?.id, session?.user?.email, profile?.display_name, followedIds]
+  );
 
   const handleSend = () => {
     if (!input.trim() || isEnded) return;
@@ -27,7 +94,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
     setInput('');
   };
 
-  // Render sorted newest at bottom, or inverted list
+  // Render newest at bottom
   const displayMessages = [...messages].reverse();
 
   return (
@@ -45,7 +112,23 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
           renderItem={({ item }) => (
             <View style={styles.messageRow}>
               <View style={styles.bubble}>
-                <Text style={styles.author}>{item.author_name || 'Viewer'}</Text>
+                <View style={styles.authorRow}>
+                  <Text style={styles.author}>{item.author_name || 'Viewer'}</Text>
+                  {session?.user?.id && item.user_id && item.user_id !== session.user.id && (
+                    <TouchableOpacity
+                      style={[
+                        styles.chatFollowBtn,
+                        followedIds.has(item.user_id) && styles.chatFollowingBtn,
+                      ]}
+                      onPress={() => handleToggleFollow(item.user_id, item.author_name)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.chatFollowBtnText}>
+                        {followedIds.has(item.user_id) ? '✓ Following' : '+ Follow'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <Text style={styles.content}>{item.content}</Text>
               </View>
 
@@ -96,7 +179,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
 
 const styles = StyleSheet.create({
   container: {
-    height: 280,
+    height: 290,
     width: '100%',
     justifyContent: 'flex-end',
   },
@@ -115,19 +198,38 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   bubble: {
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 14,
-    maxWidth: '85%',
+    maxWidth: '88%',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 3,
   },
   author: {
     color: '#818CF8',
     fontSize: 11,
     fontWeight: '700',
-    marginBottom: 2,
+  },
+  chatFollowBtn: {
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  chatFollowingBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  chatFollowBtnText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
   content: {
     color: '#FFFFFF',
@@ -188,4 +290,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
-

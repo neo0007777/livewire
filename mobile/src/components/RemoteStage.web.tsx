@@ -8,6 +8,7 @@ interface RemoteStageProps {
 
 export function RemoteStage({ channel }: RemoteStageProps) {
   const [isConnected, setIsConnected] = useState(false);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<any>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -20,6 +21,14 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       setIsMuted(videoRef.current.muted);
     }
   };
+
+  // Bind remote stream to video element
+  useEffect(() => {
+    if (videoRef.current && remoteStream) {
+      videoRef.current.srcObject = remoteStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [remoteStream]);
 
   useEffect(() => {
     if (!channel) return;
@@ -39,10 +48,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     pc.ontrack = (event) => {
       if (!isMounted) return;
       if (event.streams && event.streams[0]) {
-        if (videoRef.current) {
-          videoRef.current.srcObject = event.streams[0];
-          videoRef.current.play().catch(() => {});
-        }
+        setRemoteStream(event.streams[0]);
         isConnectedRef.current = true;
         setIsConnected(true);
       }

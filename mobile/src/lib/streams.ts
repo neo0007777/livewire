@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 export interface StreamData {
@@ -66,6 +67,15 @@ export async function endStream(streamId: string): Promise<StreamData> {
 }
 
 export async function fetchLiveKitToken(streamId: string): Promise<LiveKitTokenResponse> {
+  // On web, LiveKit native SDK is not used (browser WebRTC is used), return without network call to avoid CORS preflight errors
+  if (Platform.OS === 'web') {
+    return {
+      token: 'web_token_' + streamId,
+      url: 'wss://placeholder.livekit.cloud',
+      role: 'creator',
+    };
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke<LiveKitTokenResponse>('livekit-token', {
       body: { streamId },

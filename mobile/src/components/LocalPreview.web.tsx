@@ -10,10 +10,11 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
   const videoRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 1. Initialize local camera feed
+  // 1. Initialize local webcam and mic
   useEffect(() => {
     let isMounted = true;
 
@@ -24,28 +25,42 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
         return;
       }
 
+      let stream: MediaStream | null = null;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        // Try requesting video + audio first
+        stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: true,
         });
-
-        if (!isMounted) {
-          stream.getTracks().forEach((t) => t.stop());
+      } catch (err: any) {
+        // If audio fails (e.g. no microphone detected or audio permission denied), try video only
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false,
+          });
+        } catch (videoErr: any) {
+          if (isMounted) {
+            setHasPermission(false);
+            setErrorMsg(
+              videoErr.name === 'NotAllowedError'
+                ? 'Camera access denied by browser'
+                : 'Camera device not accessible'
+            );
+          }
           return;
         }
+      }
 
+      if (!isMounted) {
+        stream?.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      if (stream) {
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
-        }
+        setLocalStream(stream);
         setHasPermission(true);
-      } catch (err: any) {
-        if (isMounted) {
-          setHasPermission(false);
-          setErrorMsg(err.name === 'NotAllowedError' ? 'Camera access denied by browser' : 'Camera device not accessible');
-        }
       }
     }
 
@@ -62,9 +77,17 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
     };
   }, []);
 
+  // Bind local stream to video element
+  useEffect(() => {
+    if (videoRef.current && localStream) {
+      videoRef.current.srcObject = localStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [localStream]);
+
   // 2. WebRTC P2P signaling to transmit camera to connected viewers
   useEffect(() => {
-    if (!channel || !hasPermission) return;
+    if (!channel) return;
 
     // Handle viewer request for live video stream
     const handleRequestStream = async ({ payload }: any) => {
@@ -91,7 +114,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
       });
 
       pc.onicecandidate = (event) => {
-        if (event.candidate) {
+        if (event.candidate && channel) {
           channel.send({
             type: 'broadcast',
             event: 'p2p_ice',
@@ -144,7 +167,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
     channel.on('broadcast', { event: 'p2p_request_stream' }, handleRequestStream);
     channel.on('broadcast', { event: 'p2p_answer' }, handleAnswer);
     channel.on('broadcast', { event: 'p2p_ice' }, handleIceCandidate);
-  }, [channel, hasPermission]);
+  }, [channel]);
 
   return (
     <View style={styles.container}>
