@@ -4,7 +4,12 @@ import { useTracks } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { VideoTrack } from '@livekit/react-native';
 
-export function RemoteStage() {
+interface RemoteStageProps {
+  channel?: any;
+  streamId?: string;
+}
+
+export function RemoteStage(_props?: RemoteStageProps) {
   const tracks = useTracks([Track.Source.Camera]);
   const remoteTrack = tracks.find((t) => !t.participant.isLocal);
 

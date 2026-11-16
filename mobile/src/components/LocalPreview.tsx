@@ -4,7 +4,12 @@ import { useTracks } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { VideoTrack } from '@livekit/react-native';
 
-export function LocalPreview() {
+interface LocalPreviewProps {
+  channel?: any;
+  streamId?: string;
+}
+
+export function LocalPreview(_props?: LocalPreviewProps) {
   const tracks = useTracks([Track.Source.Camera]);
   const localTrack = tracks.find((t) => t.participant.isLocal);
 

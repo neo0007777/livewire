@@ -53,7 +53,7 @@ export default function WatchScreen() {
   }, [handleStreamUpdate, updateFromStream]);
 
   // Stream channel hook
-  const { status: channelStatus } = useStreamChannel({
+  const { channel, status: channelStatus } = useStreamChannel({
     streamId,
     isCreator: false,
     onNewMessage: handleIncomingMessage,
@@ -166,7 +166,7 @@ export default function WatchScreen() {
           video={false}
         >
           <View style={styles.room}>
-            <RemoteStage />
+            <RemoteStage channel={channel} streamId={streamId} />
 
             {/* Top Bar with Stream Info & Controls */}
             <View style={styles.topBar}>

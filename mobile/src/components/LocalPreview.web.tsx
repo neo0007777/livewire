@@ -1,12 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 
-export function LocalPreview() {
+interface LocalPreviewProps {
+  channel?: any;
+  streamId?: string;
+}
+
+export function LocalPreview({ channel }: LocalPreviewProps) {
   const videoRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // 1. Initialize local camera feed
   useEffect(() => {
     let isMounted = true;
 
@@ -20,7 +27,7 @@ export function LocalPreview() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
+          audio: true,
         });
 
         if (!isMounted) {
@@ -46,12 +53,98 @@ export function LocalPreview() {
 
     return () => {
       isMounted = false;
+      peersRef.current.forEach((pc) => pc.close());
+      peersRef.current.clear();
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
     };
   }, []);
+
+  // 2. WebRTC P2P signaling to transmit camera to connected viewers
+  useEffect(() => {
+    if (!channel || !hasPermission) return;
+
+    // Handle viewer request for live video stream
+    const handleRequestStream = async ({ payload }: any) => {
+      const viewerId = payload?.viewerId;
+      if (!viewerId || !streamRef.current) return;
+
+      // Close previous connection if any
+      if (peersRef.current.has(viewerId)) {
+        peersRef.current.get(viewerId)?.close();
+        peersRef.current.delete(viewerId);
+      }
+
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      });
+      peersRef.current.set(viewerId, pc);
+
+      // Add local camera and mic tracks
+      streamRef.current.getTracks().forEach((track) => {
+        pc.addTrack(track, streamRef.current!);
+      });
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          channel.send({
+            type: 'broadcast',
+            event: 'p2p_ice',
+            payload: { targetId: viewerId, candidate: event.candidate },
+          });
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        channel.send({
+          type: 'broadcast',
+          event: 'p2p_offer',
+          payload: { targetId: viewerId, offer },
+        });
+      } catch (err) {
+        // Offer generation error handled
+      }
+    };
+
+    // Handle viewer answer
+    const handleAnswer = async ({ payload }: any) => {
+      const { viewerId, answer } = payload || {};
+      const pc = peersRef.current.get(viewerId);
+      if (pc && pc.signalingState === 'have-local-offer') {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        } catch (err) {
+          // Set remote description handled
+        }
+      }
+    };
+
+    // Handle viewer ICE candidate
+    const handleIceCandidate = async ({ payload }: any) => {
+      const { targetId, candidate, fromId } = payload || {};
+      if (targetId === 'creator' && fromId && candidate) {
+        const pc = peersRef.current.get(fromId);
+        if (pc && pc.remoteDescription) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            // ICE candidate error handled
+          }
+        }
+      }
+    };
+
+    channel.on('broadcast', { event: 'p2p_request_stream' }, handleRequestStream);
+    channel.on('broadcast', { event: 'p2p_answer' }, handleAnswer);
+    channel.on('broadcast', { event: 'p2p_ice' }, handleIceCandidate);
+  }, [channel, hasPermission]);
 
   return (
     <View style={styles.container}>

@@ -47,7 +47,7 @@ export default function BroadcastScreen() {
   });
 
   // Stream channel hook
-  const { status: channelStatus } = useStreamChannel({
+  const { channel, status: channelStatus } = useStreamChannel({
     streamId,
     isCreator: true,
     onNewMessage: handleIncomingMessage,
@@ -153,7 +153,7 @@ export default function BroadcastScreen() {
           video={true}
         >
           <View style={styles.room}>
-            <LocalPreview />
+            <LocalPreview channel={channel} streamId={streamId} />
 
             {/* Top Control Bar */}
             <View style={styles.topBar}>
