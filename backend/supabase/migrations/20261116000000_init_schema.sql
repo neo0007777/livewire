@@ -174,6 +174,12 @@ declare
 begin
   if uid is null then raise exception 'not_authenticated' using errcode = 'P0001'; end if;
 
+  -- Ensure profile row exists in public.profiles for the creator
+  insert into public.profiles (id, display_name)
+  select u.id, coalesce(nullif(trim(u.raw_user_meta_data ->> 'display_name'), ''), split_part(u.email, '@', 1))
+  from auth.users u where u.id = uid
+  on conflict (id) do nothing;
+
   update public.streams
      set status = 'ended', ended_at = now(), current_viewers = 0
    where creator_id = uid and status = 'live';
