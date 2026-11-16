@@ -21,7 +21,42 @@ export interface LiveKitTokenResponse {
 export async function startStream(title: string): Promise<StreamData> {
   const { data, error } = await supabase.rpc('start_stream', { p_title: title.trim() });
   if (error) throw error;
-  return data as StreamData;
+  const stream = data as StreamData;
+
+  // Immediately notify all followers that this creator is live
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single();
+      const creatorName = profile?.display_name || user.email?.split('@')[0] || 'A creator you follow';
+
+      const { data: followers } = await supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('creator_id', user.id);
+
+      if (followers && followers.length > 0) {
+        const notifs = followers.map((f) => ({
+          user_id: f.follower_id,
+          type: 'stream_live',
+          title: `${creatorName} is live!`,
+          body: stream.title,
+          data: { stream_id: stream.id },
+          dedupe_key: `live:${stream.id}:${f.follower_id}`,
+        }));
+        await supabase.from('notifications').insert(notifs);
+      }
+    }
+  } catch (err) {
+    // Best-effort notification delivery
+  }
+
+  return stream;
 }
 
 export async function endStream(streamId: string): Promise<StreamData> {

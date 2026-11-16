@@ -73,7 +73,13 @@ export function InAppBanner() {
       <TouchableOpacity style={styles.banner} activeOpacity={0.9} onPress={handlePress}>
         <View style={styles.iconBox}>
           <Text style={styles.icon}>
-            {currentNotif.type === 'stream_live' ? '🔴' : currentNotif.type === 'viewer_milestone' ? '🎉' : '🔔'}
+            {currentNotif.type === 'stream_live'
+              ? '🔴'
+              : currentNotif.type === 'new_follower'
+              ? '👤'
+              : currentNotif.type === 'viewer_milestone'
+              ? '🎉'
+              : '🔔'}
           </Text>
         </View>
 

@@ -23,7 +23,7 @@ export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const streamId = Array.isArray(id) ? id[0] : (id || '');
   const router = useRouter();
-  const { session } = useSessionStore();
+  const { session, profile } = useSessionStore();
   const [tokenData, setTokenData] = useState<LiveKitTokenResponse | null>(null);
   const [streamInfo, setStreamInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +97,7 @@ export default function WatchScreen() {
   // Toggle follow creator
   const toggleFollow = async () => {
     if (!streamInfo?.creator_id || !session?.user?.id) return;
+    if (session.user.id === streamInfo.creator_id) return; // Cannot follow yourself
 
     if (isFollowing) {
       await supabase
@@ -106,11 +107,30 @@ export default function WatchScreen() {
         .eq('creator_id', streamInfo.creator_id);
       setIsFollowing(false);
     } else {
-      await supabase.from('follows').insert({
+      const { error } = await supabase.from('follows').insert({
         follower_id: session.user.id,
         creator_id: streamInfo.creator_id,
       });
-      setIsFollowing(true);
+
+      if (!error) {
+        setIsFollowing(true);
+        // Create follower notification for creator
+        try {
+          const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: streamInfo.creator_id,
+              type: 'new_follower',
+              title: 'New Follower!',
+              body: `${myName} started following you.`,
+              data: { follower_id: session.user.id },
+              dedupe_key: `follow:${session.user.id}:${streamInfo.creator_id}:${Date.now()}`,
+            });
+        } catch (notifErr) {
+          // Best-effort notification delivery
+        }
+      }
     }
   };
 
@@ -184,14 +204,16 @@ export default function WatchScreen() {
               </View>
 
               <View style={styles.rightActions}>
-                <TouchableOpacity
-                  style={[styles.followButton, isFollowing && styles.followingButton]}
-                  onPress={toggleFollow}
-                >
-                  <Text style={styles.followButtonText}>
-                    {isFollowing ? 'Following' : '+ Follow'}
-                  </Text>
-                </TouchableOpacity>
+                {session?.user?.id !== streamInfo?.creator_id && (
+                  <TouchableOpacity
+                    style={[styles.followButton, isFollowing && styles.followingButton]}
+                    onPress={toggleFollow}
+                  >
+                    <Text style={styles.followButtonText}>
+                      {isFollowing ? 'Following' : '+ Follow'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 <ViewerBadge count={viewerCount} />
               </View>
             </View>

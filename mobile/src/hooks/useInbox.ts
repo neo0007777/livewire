@@ -5,13 +5,14 @@ import { useSessionStore } from '../stores/session';
 export interface AppNotification {
   id: string;
   user_id: string;
-  type: 'stream_live' | 'viewer_milestone' | 'highlights_ready' | 'daily_digest';
+  type: 'stream_live' | 'viewer_milestone' | 'highlights_ready' | 'daily_digest' | 'new_follower';
   title: string;
   body: string;
   data: {
     stream_id?: string;
     milestone?: number;
     digest_date?: string;
+    follower_id?: string;
   };
   dedupe_key: string;
   read_at: string | null;

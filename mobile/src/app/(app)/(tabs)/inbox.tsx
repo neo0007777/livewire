@@ -21,6 +21,8 @@ export default function InboxScreen() {
     switch (type) {
       case 'stream_live':
         return '🔴';
+      case 'new_follower':
+        return '👤';
       case 'viewer_milestone':
         return '🎉';
       case 'highlights_ready':
