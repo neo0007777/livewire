@@ -1,6 +1,17 @@
 -- Block A — extensions, private schema, config
-create extension if not exists pg_net with schema extensions;   -- provides net.http_post
-create extension if not exists pg_cron;                         -- provides cron.schedule
+do $$
+begin
+  create extension if not exists pg_net with schema extensions;
+exception when others then
+  null;
+end $$;
+
+do $$
+begin
+  create extension if not exists pg_cron;
+exception when others then
+  null;
+end $$;
 
 create schema if not exists private;
 revoke all on schema private from public, anon, authenticated;
