@@ -1,13 +1,16 @@
+import '../lib/webPolyfill';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { registerGlobals } from '@livekit/react-native';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
 
-// Register LiveKit WebRTC globals at root entry
-registerGlobals();
+// Register LiveKit WebRTC globals on native platforms
+if (Platform.OS !== 'web') {
+  registerGlobals();
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
