@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LiveKitWrapper } from '../../../components/LiveKitWrapper';
@@ -84,26 +85,36 @@ export default function BroadcastScreen() {
     };
   }, [streamId]);
 
+  const handleEndStream = useCallback(async () => {
+    setIsEnding(true);
+    try {
+      await endStream(streamId);
+    } catch (err) {
+      // End stream handled
+    } finally {
+      router.replace(`/(app)/summary/${streamId}`);
+    }
+  }, [streamId, router]);
+
   // Confirm End Stream
   const confirmEnd = useCallback(() => {
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' ? window.confirm('Are you sure you want to conclude this live broadcast?') : true;
+      if (ok) {
+        handleEndStream();
+      }
+      return;
+    }
+
     Alert.alert('End Stream', 'Are you sure you want to conclude this live broadcast?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'End Stream',
         style: 'destructive',
-        onPress: async () => {
-          setIsEnding(true);
-          try {
-            await endStream(streamId);
-          } catch (err) {
-            // End stream handled
-          } finally {
-            router.replace(`/(app)/summary/${streamId}`);
-          }
-        },
+        onPress: handleEndStream,
       },
     ]);
-  }, [streamId, router]);
+  }, [handleEndStream]);
 
   // Intercept Android hardware back button
   useEffect(() => {

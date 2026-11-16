@@ -1,27 +1,37 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { useSessionStore } from '../../../stores/session';
 
 export default function ProfileScreen() {
   const { profile, session, signOut } = useSessionStore();
 
+  const performSignOut = async () => {
+    if (session?.user?.id) {
+      try {
+        await supabase.from('push_tokens').delete().eq('user_id', session.user.id);
+      } catch (err) {
+        // Best-effort cleanup
+      }
+    }
+    await supabase.auth.signOut();
+    signOut();
+  };
+
   const handleSignOut = async () => {
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' ? window.confirm('Are you sure you want to sign out?') : true;
+      if (ok) {
+        await performSignOut();
+      }
+      return;
+    }
+
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: async () => {
-          if (session?.user?.id) {
-            try {
-              await supabase.from('push_tokens').delete().eq('user_id', session.user.id);
-            } catch (err) {
-              // Best-effort cleanup
-            }
-          }
-          await supabase.auth.signOut();
-          signOut();
-        },
+        onPress: performSignOut,
       },
     ]);
   };
