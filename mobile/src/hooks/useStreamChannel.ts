@@ -22,6 +22,16 @@ export function useStreamChannel({
   const [channelStatus, setChannelStatus] = useState<string>('DISCONNECTED');
   const channelRef = useRef<RealtimeChannel | null>(null);
 
+  // Store callbacks in refs to avoid stale closures in event listeners
+  const onNewMessageRef = useRef(onNewMessage);
+  onNewMessageRef.current = onNewMessage;
+
+  const onStreamUpdateRef = useRef(onStreamUpdate);
+  onStreamUpdateRef.current = onStreamUpdate;
+
+  const onPresenceSyncRef = useRef(onPresenceSync);
+  onPresenceSyncRef.current = onPresenceSync;
+
   useEffect(() => {
     if (!streamId || !session?.user?.id) return;
 
@@ -44,7 +54,7 @@ export function useStreamChannel({
         filter: `stream_id=eq.${streamId}`,
       },
       (payload) => {
-        onNewMessage?.(payload.new);
+        onNewMessageRef.current?.(payload.new);
       }
     );
 
@@ -58,14 +68,18 @@ export function useStreamChannel({
         filter: `id=eq.${streamId}`,
       },
       (payload) => {
-        onStreamUpdate?.(payload.new);
+        onStreamUpdateRef.current?.(payload.new);
       }
     );
 
-    // Presence sync listener
-    channel.on('presence', { event: 'sync' }, () => {
-      onPresenceSync?.(channel);
-    });
+    // Presence listeners (sync, join, leave)
+    const handlePresence = () => {
+      onPresenceSyncRef.current?.(channel);
+    };
+
+    channel.on('presence', { event: 'sync' }, handlePresence);
+    channel.on('presence', { event: 'join' }, handlePresence);
+    channel.on('presence', { event: 'leave' }, handlePresence);
 
     channel.subscribe(async (status) => {
       setChannelStatus(status);
@@ -74,6 +88,8 @@ export function useStreamChannel({
           role: isCreator ? 'creator' : 'viewer',
           joined_at: new Date().toISOString(),
         });
+        // Immediately sync presence after tracking
+        handlePresence();
       }
     });
 
@@ -90,4 +106,5 @@ export function useStreamChannel({
     status: channelStatus,
   };
 }
+
 

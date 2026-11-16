@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -40,18 +40,23 @@ export default function WatchScreen() {
   } = useChat(id);
 
   // Presence count hook
-  const { viewerCount, updateFromPresence } = usePresenceCount({
+  const { viewerCount, updateFromPresence, updateFromStream } = usePresenceCount({
     streamId: id,
     creatorId: streamInfo?.creator_id || '',
     isCreator: false,
   });
+
+  const handleMergedStreamUpdate = useCallback((stream: any) => {
+    handleStreamUpdate(stream);
+    updateFromStream(stream);
+  }, [handleStreamUpdate, updateFromStream]);
 
   // Stream channel hook
   const { status: channelStatus } = useStreamChannel({
     streamId: id,
     isCreator: false,
     onNewMessage: handleIncomingMessage,
-    onStreamUpdate: handleStreamUpdate,
+    onStreamUpdate: handleMergedStreamUpdate,
     onPresenceSync: updateFromPresence,
   });
 
@@ -67,12 +72,13 @@ export default function WatchScreen() {
 
     supabase
       .from('streams')
-      .select('id, creator_id, title, status, started_at, creator:profiles(display_name)')
+      .select('id, creator_id, title, status, current_viewers, started_at, creator:profiles(display_name)')
       .eq('id', id)
       .single()
       .then(({ data, error }) => {
         if (!error && data) {
           setStreamInfo(data);
+          updateFromStream(data);
           // Check follow status
           supabase
             .from('follows')
