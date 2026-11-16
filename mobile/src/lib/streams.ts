@@ -38,3 +38,4 @@ export async function fetchLiveKitToken(streamId: string): Promise<LiveKitTokenR
   if (!data) throw new Error('No token returned from server');
   return data;
 }
+

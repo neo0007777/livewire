@@ -26,3 +26,4 @@ export const useSessionStore = create<SessionState>((set) => ({
   setIsLoading: (isLoading) => set({ isLoading }),
   signOut: () => set({ session: null, profile: null, isLoading: false }),
 }));
+

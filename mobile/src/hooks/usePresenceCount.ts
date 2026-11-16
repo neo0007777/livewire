@@ -51,3 +51,4 @@ export function usePresenceCount({ streamId, creatorId, isCreator }: UsePresence
     updateFromPresence,
   };
 }
+
