@@ -114,6 +114,14 @@ export default function BroadcastScreen() {
     return () => sub.remove();
   }, [confirmEnd]);
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/(tabs)');
+    }
+  }, [router]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -161,7 +169,7 @@ export default function BroadcastScreen() {
       ) : (
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>Unable to initiate broadcast room.</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Text style={styles.backButtonText}>Return</Text>
           </TouchableOpacity>
         </View>

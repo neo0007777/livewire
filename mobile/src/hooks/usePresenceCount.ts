@@ -21,13 +21,10 @@ export function usePresenceCount({ streamId, creatorId, isCreator }: UsePresence
     lastChannelRef.current = channel;
     const state = channel.presenceState<{ role?: 'creator' | 'viewer'; user_id?: string }>();
     const count = Object.entries(state).filter(([key, metas]) => {
-      // Exclude creator by presence key suffix
-      if (key.endsWith(':creator')) return false;
-      // Exclude creator by ID if known
-      if (creatorIdRef.current && (key === creatorIdRef.current || key.startsWith(`${creatorIdRef.current}:`))) return false;
-      // Exclude creator by role or metadata user_id
-      if (metas.some((m) => m?.role === 'creator' || (creatorIdRef.current && m?.user_id === creatorIdRef.current))) return false;
-      return true;
+      // Exclude broadcaster session
+      if (key.endsWith(':creator') || metas.some((m) => m?.role === 'creator')) return false;
+      // Include active viewers
+      return metas.some((m) => m?.role === 'viewer') || key.includes(':viewer');
     }).length;
 
     countRef.current = count;

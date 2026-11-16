@@ -21,6 +21,7 @@ export function useStreamChannel({
   const { session } = useSessionStore();
   const [channelStatus, setChannelStatus] = useState<string>('DISCONNECTED');
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const viewerSessionIdRef = useRef(Math.random().toString(36).slice(2, 7));
 
   // Store callbacks in refs to avoid stale closures in event listeners
   const onNewMessageRef = useRef(onNewMessage);
@@ -45,7 +46,9 @@ export function useStreamChannel({
       supabase.removeChannel(existing);
     }
 
-    const presenceKey = `${session.user.id}:${isCreator ? 'creator' : 'viewer'}`;
+    const presenceKey = isCreator
+      ? `${session.user.id}:creator`
+      : `${session.user.id}:viewer:${viewerSessionIdRef.current}`;
     const channel = supabase.channel(channelName, {
       config: {
         presence: { key: presenceKey },

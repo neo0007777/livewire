@@ -138,6 +138,14 @@ export default function WatchScreen() {
     };
   }, [streamId]);
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/(tabs)');
+    }
+  }, [router]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -162,7 +170,7 @@ export default function WatchScreen() {
 
             {/* Top Bar with Stream Info & Controls */}
             <View style={styles.topBar}>
-              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                 <Text style={styles.backIcon}>✕</Text>
               </TouchableOpacity>
 
@@ -217,7 +225,7 @@ export default function WatchScreen() {
       ) : (
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>Stream is offline or ended.</Text>
-          <TouchableOpacity style={styles.returnButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.returnButton} onPress={handleBack}>
             <Text style={styles.returnButtonText}>Back to Streams</Text>
           </TouchableOpacity>
         </View>
