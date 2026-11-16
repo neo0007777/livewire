@@ -119,3 +119,20 @@
   - Milestone threshold firing verified for exact-once emission.
   - LiveKit token minting verified for correct WebRTC publish/subscribe grants.
 - Updated `BUILD_LOG.md` and committed changes to git.
+
+
+---
+
+### Turn 9: Phase 3 Automation & Workflows Implementation
+**User:**
+> "now next phase"
+
+**Action Taken:**
+- Implemented **Phase 3 (n8n Automations & Real-Time Notification System)**:
+  - **Workflow 1 (`01-stream-live-notify-followers.json`):** Triggers on stream start, resolves followers, generates deduplicated notification rows, and dispatches batch Expo push messages.
+  - **Workflow 2 (`02-viewer-milestone-alert.json`):** Listens to milestone crossings (e.g. 100 viewers), notifies creator once per threshold.
+  - **Workflow 3 (`03-stream-ended-highlights.json`):** Triggered when a stream ends, buckets chat messages into 30-second intervals to determine peak activity moments, generates Claude AI / rule-based recaps, and notifies the creator when the recap is saved.
+  - **Workflow 4 (`04-daily-digest.json`):** Scheduled daily at 09:00 AM (with manual trigger support for evaluation demos) to aggregate top 5 streams from the past 24 hours.
+  - **Workflow Setup Guide (`n8n-workflow/README.md`):** Complete instructions for importing workflows and configuring credentials.
+  - **In-App & Push Notification Architecture (`useInbox.ts`, `InAppBanner.tsx`, `push.ts`, `inbox.tsx`):** Real-time inbox feed, foreground toast banners, and Expo push token persistence.
+  - Validated all 4 workflow JSON schemas and confirmed clean TypeScript compilation (`npx tsc --noEmit`).

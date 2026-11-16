@@ -1,0 +1,333 @@
+{
+  "name": "03 Stream Ended -> Highlights",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stream-ended",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-ended",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [160, 300],
+      "webhookId": "stream-ended",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "webhook-secret-cred",
+          "name": "Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-node",
+      "name": "Wait 5 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [360, 300],
+      "webhookId": "wait-ended-settle"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from private.n8n_highlight_input($1::uuid);",
+        "queryParams": "={{ $('Webhook').first().json.body.stream_id }}",
+        "options": {}
+      },
+      "id": "postgres-highlight-input",
+      "name": "Load Stream and Chat Input",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [560, 300],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-pooler-cred",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $input.first().json;\nconst msgs = Array.isArray(s.messages) ? s.messages : [];\nconst BUCKET = 30;\n\nconst buckets = new Map();\nfor (const m of msgs) {\n  const b = Math.floor((m.offset_seconds || 0) / BUCKET);\n  if (!buckets.has(b)) buckets.set(b, []);\n  buckets.get(b).push(m);\n}\nconst moments = [...buckets.entries()]\n  .sort((a, b) => b[1].length - a[1].length || a[0] - b[0])\n  .slice(0, 3)\n  .map(([b, list]) => ({\n    start_seconds: b * BUCKET,\n    end_seconds: (b + 1) * BUCKET,\n    message_count: list.length,\n    sample: list.slice(0, 3).map(m => `${m.author_name}: ${m.content}`),\n  }))\n  .sort((a, b) => a.start_seconds - b.start_seconds);\n\nconst fmt = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;\nconst transcript = msgs\n  .map(m => `[${fmt(m.offset_seconds || 0)}] ${m.author_name}: ${m.content}`)\n  .join('\\n')\n  .slice(-20000);\n\nconst top = moments.length\n  ? `Busiest moment at ${fmt(moments.slice().sort((a, b) => b.message_count - a.message_count)[0].start_seconds)}.`\n  : 'Chat was quiet.';\nconst rule_summary =\n  `\"${s.title}\" ran ${Math.round(s.duration_seconds / 60)} min, peaked at ${s.peak_viewers} viewers ` +\n  `with ${s.total_messages} chat messages. ${top}`;\n\nreturn [{ json: {\n  stream_id: s.stream_id, title: s.title, total_messages: s.total_messages,\n  peak_viewers: s.peak_viewers, duration_seconds: s.duration_seconds,\n  moments, transcript, rule_summary,\n} }];"
+      },
+      "id": "code-find-moments",
+      "name": "Code - Find Moments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.total_messages }}",
+              "operation": "largerEqual",
+              "value2": 3
+            }
+          ]
+        }
+      },
+      "id": "if-ai-eligible",
+      "name": "Check Message Threshold",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "headerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-3-5-haiku-latest\",\n  \"max_tokens\": 300,\n  \"system\": \"You write short, upbeat recaps of live-stream chat for the stream's creator. Plain text, max 80 words, no markdown, no usernames' private details.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Stream title: {{ $json.title }}\\nPeak viewers: {{ $json.peak_viewers }}\\nBusiest moments: {{ JSON.stringify($json.moments) }}\\n\\nChat transcript:\\n{{ $json.transcript }}\\n\\nWrite the recap.\"\n    }\n  ]\n}",
+        "options": {
+          "continueOnFail": true
+        }
+      },
+      "id": "claude-ai-recap",
+      "name": "Generate AI Recap",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1180, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "anthropic-cred",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Code - Find Moments').first().json;\nconst r = $input.first().json || {};\nconst textBlock = Array.isArray(r.content) ? r.content.find(b => b.type === 'text') : null;\nconst ok = r.stop_reason !== 'refusal' && textBlock && textBlock.text && textBlock.text.trim().length > 0;\nreturn [{ json: {\n  stream_id: base.stream_id,\n  moments: base.moments,\n  summary: ok ? textBlock.text.trim().slice(0, 1200) : base.rule_summary,\n  source: ok ? 'ai' : 'rule',\n} }];"
+      },
+      "id": "code-pick-summary",
+      "name": "Code - Pick Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select private.n8n_save_highlight($1::uuid, $2, $3, $4);",
+        "queryParams": "={{ [$json.stream_id, JSON.stringify($json.moments), $json.summary, $json.source] }}",
+        "options": {}
+      },
+      "id": "postgres-save-highlight",
+      "name": "Save Highlight in DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1600, 300],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-pooler-cred",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from private.n8n_on_highlights_ready($1::uuid);",
+        "queryParams": "={{ $json.stream_id }}",
+        "options": {}
+      },
+      "id": "postgres-notify-highlights",
+      "name": "Notify Creator in DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1800, 300],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-pooler-cred",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r.expo_push_token);\nif (!rows.length) return [];\nconst messages = rows.map(r => ({\n  to: r.expo_push_token,\n  title: r.title,\n  body: r.body,\n  data: r.data,\n  sound: 'default',\n  channelId: 'default'\n}));\nconst chunks = [];\nfor (let i = 0; i < messages.length; i += 100) {\n  chunks.push(messages.slice(i, i + 100));\n}\nreturn chunks.map(c => ({ json: { messages: c } }));"
+      },
+      "id": "code-batch-push-highlights",
+      "name": "Build Expo Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://exp.host/--/api/v2/push/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.messages) }}",
+        "options": {
+          "continueOnFail": true
+        }
+      },
+      "id": "http-expo-push-highlights",
+      "name": "Send Expo Push Notifications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wait 5 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 5 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Load Stream and Chat Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Stream and Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Find Moments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Find Moments": {
+      "main": [
+        [
+          {
+            "node": "Check Message Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Threshold": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Recap",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Pick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Recap": {
+      "main": [
+        [
+          {
+            "node": "Code - Pick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Pick Summary": {
+      "main": [
+        [
+          {
+            "node": "Save Highlight in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Highlight in DB": {
+      "main": [
+        [
+          {
+            "node": "Notify Creator in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Creator in DB": {
+      "main": [
+        [
+          {
+            "node": "Build Expo Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Expo Batch": {
+      "main": [
+        [
+          {
+            "node": "Send Expo Push Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

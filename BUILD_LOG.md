@@ -53,3 +53,21 @@
     - Verified LiveKit JWT token permission granting (`canPublish: true` for creator, `canPublish: false` for viewer).
 - Acceptance: PASS — All tests and bundle validations passed with 100% success.
 - Time spent: 0.5 h
+
+
+## Phase 3 — n8n Automation Workflows & Push Inbox — 2026-11-16
+- Did:
+  - Authored all 4 production n8n workflows in `/n8n-workflow/`:
+    - `01-stream-live-notify-followers.json`: Webhook `/webhook/stream-live` -> `private.n8n_on_stream_live` -> Expo push batch.
+    - `02-viewer-milestone-alert.json`: Webhook `/webhook/viewer-milestone` -> `private.n8n_on_milestone` -> Expo push batch.
+    - `03-stream-ended-highlights.json`: Webhook `/webhook/stream-ended` -> wait 5s -> chat moment bucketing -> Claude API recap -> `private.n8n_save_highlight` -> `private.n8n_on_highlights_ready`.
+    - `04-daily-digest.json`: Daily Cron (09:00 AM) + Manual trigger -> `private.n8n_daily_digest` -> Expo push batch.
+  - Created `n8n-workflow/README.md` with credential setup (Postgres pooler, Webhook Secret, Anthropic key) and workflow activation instructions.
+  - Built `useInbox.ts` hook subscribing to real-time `notifications` table changes.
+  - Built `InAppBanner.tsx` for real-time foreground notification toast banners.
+  - Built `push.ts` handling Expo push token registration and upsert into `public.push_tokens`.
+  - Built interactive `inbox.tsx` screen with unread indicators and deep-link routing to broadcasts and recaps.
+- Broke: `NotificationBehavior` in Expo SDK 58 missing required `shouldShowList` property.
+- Fixed: Added `shouldShowList: true` to `setNotificationHandler`.
+- Acceptance: PASS — JSON validation confirmed for all 4 workflows; TypeScript compilation clean with 0 errors.
+- Time spent: 1.5 h
