@@ -9,7 +9,7 @@ import {
   BackHandler,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LiveKitRoom } from '@livekit/react-native';
+import { LiveKitWrapper } from '../../../components/LiveKitWrapper';
 import { LocalPreview } from '../../../components/LocalPreview';
 import { ViewerBadge } from '../../../components/ViewerBadge';
 import { ChatPanel } from '../../../components/ChatPanel';
@@ -125,7 +125,7 @@ export default function BroadcastScreen() {
   return (
     <View style={styles.container}>
       {tokenData ? (
-        <LiveKitRoom
+        <LiveKitWrapper
           serverUrl={tokenData.url}
           token={tokenData.token}
           connect={true}
@@ -156,7 +156,7 @@ export default function BroadcastScreen() {
               <ChatPanel messages={messages} onSend={send} onRetry={retry} />
             </View>
           </View>
-        </LiveKitRoom>
+        </LiveKitWrapper>
       ) : (
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>Unable to initiate broadcast room.</Text>

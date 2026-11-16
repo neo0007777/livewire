@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LiveKitRoom } from '@livekit/react-native';
+import { LiveKitWrapper } from '../../../components/LiveKitWrapper';
 import { RemoteStage } from '../../../components/RemoteStage';
 import { ViewerBadge } from '../../../components/ViewerBadge';
 import { ChatPanel } from '../../../components/ChatPanel';
@@ -143,7 +143,7 @@ export default function WatchScreen() {
   return (
     <View style={styles.container}>
       {tokenData ? (
-        <LiveKitRoom
+        <LiveKitWrapper
           serverUrl={tokenData.url}
           token={tokenData.token}
           connect={true}
@@ -206,7 +206,7 @@ export default function WatchScreen() {
               />
             </View>
           </View>
-        </LiveKitRoom>
+        </LiveKitWrapper>
       ) : (
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>Stream is offline or ended.</Text>
