@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+google-services.json
+fcm-service-account*.json
+.expo/
+dist/
+android/
+ios/
+supabase/.temp/
+.DS_Store
