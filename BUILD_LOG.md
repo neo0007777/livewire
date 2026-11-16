@@ -38,3 +38,18 @@
 - Fixed: Replaced `absoluteFillObject` with `absoluteFill` and placed flex styles on inner container view.
 - Acceptance: PASS — `npx tsc --noEmit` verified with 0 errors across the entire Phase 1 codebase.
 - Time spent: 1.5 h
+
+
+## Verification & Testing — Phase 1 Acceptance — 2026-11-16
+- Did:
+  - Executed `npx -y expo-doctor`: 20/20 diagnostics passed with zero warnings.
+  - Executed `npx expo config --type public`: Android permissions (`CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, WebRTC network/audio permissions) verified and valid.
+  - Executed full production bundle test `npx expo export --platform android`: 1669 modules bundled cleanly into Android JS entrypoint with no bundling or runtime resolution issues.
+  - Executed unit verification test suite for core Phase 1 logic:
+    - Verified presence counting excludes broadcaster and deduplicates multiple tabs/devices per user.
+    - Verified chat client UUID deduplication and server sequence ordering.
+    - Verified overlap gap-fill logic across simulated reconnections.
+    - Verified milestone threshold deduplication.
+    - Verified LiveKit JWT token permission granting (`canPublish: true` for creator, `canPublish: false` for viewer).
+- Acceptance: PASS — All tests and bundle validations passed with 100% success.
+- Time spent: 0.5 h

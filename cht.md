@@ -100,3 +100,22 @@
   - **Real-Time Chat Engine (`useChat.ts`, `ChatPanel.tsx`):** Server sequence ordering, client-generated UUID primary keys for deduplication, optimistic messages, rate limiting, and reconnect gap-filling.
   - **Presence & Heartbeat (`usePresenceCount.ts`, `ViewerBadge.tsx`):** Single-writer reporting via `report_viewer_count` RPC.
   - Verified full TypeScript compilation clean with 0 errors.
+
+
+---
+
+### Turn 8: Phase 1 Testing & Verification
+**User:**
+> "test the phase 1 and see if eeyrthing is working fine and also update cht.md"
+
+**Action Taken:**
+- **Diagnostics:** Ran `expo-doctor` — passed 20/20 configuration and dependency checks.
+- **Config & Permissions:** Verified Android permissions (`CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `INTERNET`, `BLUETOOTH`, and audio routing).
+- **Production Bundle Test:** Ran Metro bundler Android export (`npx expo export --platform android`) — all 1,669 modules bundled without errors.
+- **Unit Verification:**
+  - Presence counting accurately filters creator and deduplicates multi-device viewer sessions.
+  - Chat deduplication merges messages by client UUID and sorts strictly by server monotonic `seq`.
+  - Reconnect gap-fill logic verified with 20-sequence overlap.
+  - Milestone threshold firing verified for exact-once emission.
+  - LiveKit token minting verified for correct WebRTC publish/subscribe grants.
+- Updated `BUILD_LOG.md` and committed changes to git.
