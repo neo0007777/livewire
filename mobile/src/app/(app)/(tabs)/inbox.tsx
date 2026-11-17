@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInbox, AppNotification } from '../../../hooks/useInbox';
 
@@ -17,36 +17,43 @@ export default function InboxScreen() {
     }
   };
 
-  const getIcon = (type: string) => {
+  const getIconInfo = (type: string) => {
     switch (type) {
       case 'stream_live':
-        return '🔴';
+        return { emoji: '🔴', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
       case 'new_follower':
-        return '👤';
+        return { emoji: '👤', bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.3)' };
       case 'viewer_milestone':
-        return '🎉';
+        return { emoji: '🏆', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
       case 'highlights_ready':
-        return '🎬';
-      case 'daily_digest':
-        return '📰';
+        return { emoji: '🎬', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
       default:
-        return '🔔';
+        return { emoji: '🔔', bg: 'rgba(100, 116, 139, 0.15)', border: 'rgba(100, 116, 139, 0.3)' };
     }
   };
 
   const formatTime = (iso: string) => {
     const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-    if (diff < 60) return 'just now';
+    if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return `${Math.floor(diff / 86400)}d ago`;
   };
 
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.header}>Notifications</Text>
-        <Text style={styles.badge}>{notifications.filter((n) => !n.read_at).length} Unread</Text>
+        <View>
+          <Text style={styles.header}>Activity</Text>
+          <Text style={styles.subtitle}>Broadcaster alerts & follower updates</Text>
+        </View>
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount} New</Text>
+          </View>
+        )}
       </View>
 
       <FlatList
@@ -54,37 +61,45 @@ export default function InboxScreen() {
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#818CF8" />}
         contentContainerStyle={notifications.length === 0 ? styles.emptyList : styles.list}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.card, !item.read_at && styles.unreadCard]}
-            onPress={() => handleNotificationPress(item)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.iconCircle}>
-              <Text style={styles.icon}>{getIcon(item.type)}</Text>
-            </View>
+        renderItem={({ item }) => {
+          const { emoji, bg, border } = getIconInfo(item.type);
+          const isUnread = !item.read_at;
 
-            <View style={styles.cardContent}>
-              <View style={styles.titleRow}>
-                <Text style={styles.title} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.time}>{formatTime(item.created_at)}</Text>
+          return (
+            <TouchableOpacity
+              style={[styles.card, isUnread && styles.unreadCard]}
+              onPress={() => handleNotificationPress(item)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: bg, borderColor: border }]}>
+                <Text style={styles.icon}>{emoji}</Text>
               </View>
 
-              <Text style={styles.body}>{item.body}</Text>
-            </View>
+              <View style={styles.cardContent}>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.title, isUnread && styles.titleUnread]} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.time}>{formatTime(item.created_at)}</Text>
+                </View>
 
-            {!item.read_at && <View style={styles.unreadDot} />}
-          </TouchableOpacity>
-        )}
+                <Text style={styles.body}>{item.body}</Text>
+              </View>
+
+              {isUnread && <View style={styles.unreadDot} />}
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>🔔</Text>
-              <Text style={styles.emptyTitle}>All caught up!</Text>
+              <View style={styles.emptyIconCircle}>
+                <Text style={styles.emptyIcon}>🔔</Text>
+              </View>
+              <Text style={styles.emptyTitle}>All Caught Up!</Text>
               <Text style={styles.emptySubtitle}>
-                You will be notified when creators go live, reach milestones, or publish daily digests.
+                You will be notified when creators you follow start streaming, when viewers follow you,
+                or when AI highlights are ready.
               </Text>
             </View>
           ) : undefined
@@ -97,8 +112,8 @@ export default function InboxScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#070913',
+    paddingTop: Platform.OS === 'ios' ? 60 : 30,
   },
   headerRow: {
     flexDirection: 'row',
@@ -109,48 +124,60 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: '900',
+    color: '#F8FAFC',
+    letterSpacing: 0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#94A3B8',
+    marginTop: 2,
   },
   badge: {
-    backgroundColor: '#1E1B4B',
-    color: '#818CF8',
+    backgroundColor: '#EF4444',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 14,
-    fontSize: 12,
-    fontWeight: '700',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   list: {
-    paddingHorizontal: 16,
-    gap: 10,
+    padding: 16,
+    gap: 12,
+    maxWidth: 800,
+    alignSelf: 'center',
+    width: '100%',
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
   },
   card: {
+    backgroundColor: '#0E1322',
+    borderRadius: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#171717',
-    padding: 14,
-    borderRadius: 14,
+    gap: 12,
     borderWidth: 1,
-    borderColor: '#262626',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   unreadCard: {
-    backgroundColor: '#1C1A2E',
-    borderColor: '#3730A3',
+    backgroundColor: '#13192B',
+    borderColor: 'rgba(99, 102, 241, 0.3)',
   },
   iconCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#262626',
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   icon: {
     fontSize: 20,
@@ -165,46 +192,59 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    color: '#FFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
+    color: '#E2E8F0',
     flex: 1,
     marginRight: 8,
   },
+  titleUnread: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
   time: {
-    color: '#9CA3AF',
     fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
   },
   body: {
-    color: '#D1D5DB',
     fontSize: 13,
+    color: '#94A3B8',
     lineHeight: 18,
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#818CF8',
-    marginLeft: 8,
+    backgroundColor: '#6366F1',
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 32,
+    padding: 36,
+    maxWidth: 400,
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: 36,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#E5E7EB',
+    fontWeight: '800',
+    color: '#F8FAFC',
     marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
+    fontSize: 13,
+    color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
   },
 });

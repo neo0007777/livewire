@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { ChatMessage } from '../hooks/useChat';
 import { supabase } from '../lib/supabase';
@@ -15,15 +17,18 @@ import { useSessionStore } from '../stores/session';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
-  onSend: (text: string) => void;
-  onRetry: (id: string) => void;
+  onSend: (content: string) => Promise<void>;
+  onRetry: (clientMessageId: string) => void;
   isEnded?: boolean;
 }
+
+const QUICK_REACTIONS = ['🔥', '❤️', '🚀', '👏', '💯', '😂', '🎉', '⚡'];
 
 export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps) {
   const { session, profile } = useSessionStore();
   const [input, setInput] = useState('');
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+  const flatListRef = useRef<FlatList>(null);
 
   // Load who the current user follows
   useEffect(() => {
@@ -68,7 +73,6 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
         });
 
         if (!error) {
-          // Send real-time follower notification
           try {
             const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
             await supabase.from('notifications').insert({
@@ -88,10 +92,11 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
     [session?.user?.id, session?.user?.email, profile?.display_name, followedIds]
   );
 
-  const handleSend = () => {
-    if (!input.trim() || isEnded) return;
-    onSend(input);
-    setInput('');
+  const handleSend = (textToSend?: string) => {
+    const text = (textToSend || input).trim();
+    if (!text || isEnded) return;
+    onSend(text);
+    if (!textToSend) setInput('');
   };
 
   // Render newest at bottom
@@ -100,122 +105,163 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       style={styles.container}
     >
-      <View style={styles.listContainer}>
-        <FlatList
-          data={displayMessages}
-          keyExtractor={(item) => item.id}
-          inverted
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.messageList}
-          renderItem={({ item }) => (
+      {/* Messages Stream */}
+      <FlatList
+        ref={flatListRef}
+        data={displayMessages}
+        keyExtractor={(item) => item.client_message_id}
+        inverted
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.messageList}
+        renderItem={({ item }) => {
+          const isMe = item.user_id === session?.user?.id;
+          const isFollowed = item.user_id ? followedIds.has(item.user_id) : false;
+
+          return (
             <View style={styles.messageRow}>
               <View style={styles.bubble}>
                 <View style={styles.authorRow}>
-                  <Text style={styles.author}>{item.author_name || 'Viewer'}</Text>
+                  {/* Avatar dot */}
+                  <View style={styles.avatarMini}>
+                    <Text style={styles.avatarMiniText}>
+                      {(item.author_name || 'V').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+
+                  <Text style={[styles.author, isMe && styles.authorMe]}>
+                    {item.author_name || 'Viewer'}
+                  </Text>
+
                   {session?.user?.id && item.user_id && item.user_id !== session.user.id && (
                     <TouchableOpacity
-                      style={[
-                        styles.chatFollowBtn,
-                        followedIds.has(item.user_id) && styles.chatFollowingBtn,
-                      ]}
-                      onPress={() => handleToggleFollow(item.user_id, item.author_name)}
+                      style={[styles.chatFollowBtn, isFollowed && styles.chatFollowingBtn]}
+                      onPress={() => handleToggleFollow(item.user_id!, item.author_name)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.chatFollowBtnText}>
-                        {followedIds.has(item.user_id) ? '✓ Following' : '+ Follow'}
+                      <Text style={[styles.chatFollowBtnText, isFollowed && styles.chatFollowingBtnText]}>
+                        {isFollowed ? '✓ Following' : '+ Follow'}
                       </Text>
                     </TouchableOpacity>
                   )}
                 </View>
+
                 <Text style={styles.content}>{item.content}</Text>
               </View>
 
               {item.status === 'sending' && (
-                <Text style={styles.sendingTag}>sending...</Text>
+                <ActivityIndicator size="small" color="#818CF8" style={styles.statusIndicator} />
               )}
-
               {item.status === 'failed' && (
-                <TouchableOpacity onPress={() => onRetry(item.id)}>
-                  <Text style={styles.failedTag}>
-                    {item.errorReason || 'Tap to retry'}
-                  </Text>
+                <TouchableOpacity
+                  onPress={() => onRetry(item.client_message_id)}
+                  style={styles.retryBtn}
+                >
+                  <Text style={styles.retryText}>⚠️ Retry</Text>
                 </TouchableOpacity>
               )}
             </View>
-          )}
-        />
-      </View>
+          );
+        }}
+      />
 
-      {isEnded ? (
-        <View style={styles.endedBanner}>
-          <Text style={styles.endedText}>Broadcast has ended</Text>
-        </View>
-      ) : (
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Say something in live chat..."
-            placeholderTextColor="#888"
-            value={input}
-            onChangeText={setInput}
-            maxLength={500}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !input.trim() && styles.disabledButton]}
-            onPress={handleSend}
-            disabled={!input.trim()}
-          >
-            <Text style={styles.sendButtonText}>Send</Text>
-          </TouchableOpacity>
+      {/* Quick Emoji Reaction Ribbon */}
+      {!isEnded && (
+        <View style={styles.reactionRibbon}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.reactionsScroll}>
+            {QUICK_REACTIONS.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={styles.reactionPill}
+                onPress={() => handleSend(emoji)}
+                activeOpacity={0.65}
+              >
+                <Text style={styles.reactionEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
+
+      {/* Input Bar */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder={isEnded ? 'Stream has ended' : 'Say something in live chat...'}
+          placeholderTextColor="#64748B"
+          value={input}
+          onChangeText={setInput}
+          editable={!isEnded}
+          onSubmitEditing={() => handleSend()}
+          returnKeyType="send"
+        />
+        <TouchableOpacity
+          style={[styles.sendButton, (!input.trim() || isEnded) && styles.sendButtonDisabled]}
+          onPress={() => handleSend()}
+          disabled={!input.trim() || isEnded}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.sendIcon}>➤</Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 290,
+    height: 310,
     width: '100%',
     justifyContent: 'flex-end',
   },
-  listContainer: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
   messageList: {
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 6,
     gap: 8,
   },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    flexWrap: 'wrap',
     gap: 6,
   },
   bubble: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(10, 14, 26, 0.78)',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 14,
-    maxWidth: '88%',
+    maxWidth: '90%',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(8px)',
+  } as any,
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     marginBottom: 3,
   },
+  avatarMini: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#4338CA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarMiniText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
   author: {
-    color: '#818CF8',
+    color: '#93C5FD',
     fontSize: 11,
     fontWeight: '700',
+  },
+  authorMe: {
+    color: '#A5B4FC',
   },
   chatFollowBtn: {
     backgroundColor: '#4F46E5',
@@ -224,69 +270,95 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   chatFollowingBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   chatFollowBtnText: {
     color: '#FFF',
     fontSize: 9,
     fontWeight: '700',
   },
+  chatFollowingBtnText: {
+    color: '#94A3B8',
+  },
   content: {
+    color: '#F8FAFC',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  statusIndicator: {
+    marginBottom: 6,
+  },
+  retryBtn: {
+    backgroundColor: '#7F1D1D',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  retryText: {
+    color: '#FCA5A5',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  reactionRibbon: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  reactionsScroll: {
+    gap: 8,
+  },
+  reactionPill: {
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 14,
+  },
+  reactionEmoji: {
+    fontSize: 14,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingTop: 4,
+    gap: 8,
+    alignItems: 'center',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     color: '#FFFFFF',
     fontSize: 14,
   },
-  sendingTag: {
-    color: '#9CA3AF',
-    fontSize: 11,
-    fontStyle: 'italic',
-    paddingBottom: 4,
-  },
-  failedTag: {
-    color: '#EF4444',
-    fontSize: 11,
-    fontWeight: '600',
-    paddingBottom: 4,
-  },
-  endedBanner: {
-    backgroundColor: 'rgba(239, 68, 68, 0.85)',
-    padding: 10,
-    alignItems: 'center',
-    margin: 12,
-    borderRadius: 8,
-  },
-  endedText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    padding: 10,
-    gap: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    alignItems: 'center',
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    color: '#FFF',
-    fontSize: 14,
-  },
   sendButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#4F46E5',
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  disabledButton: {
-    backgroundColor: '#374151',
+  sendButtonDisabled: {
+    backgroundColor: '#1E293B',
+    shadowOpacity: 0,
+    elevation: 0,
   },
-  sendButtonText: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 13,
+  sendIcon: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginLeft: 2,
   },
 });

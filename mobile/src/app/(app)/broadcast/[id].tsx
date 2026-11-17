@@ -99,30 +99,36 @@ export default function BroadcastScreen() {
   // Confirm End Stream
   const confirmEnd = useCallback(() => {
     if (Platform.OS === 'web') {
-      const ok = typeof window !== 'undefined' ? window.confirm('Are you sure you want to conclude this live broadcast?') : true;
+      const ok = typeof window !== 'undefined' ? window.confirm('Are you sure you want to end this live broadcast?') : true;
       if (ok) {
         handleEndStream();
       }
       return;
     }
 
-    Alert.alert('End Stream', 'Are you sure you want to conclude this live broadcast?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'End Stream',
-        style: 'destructive',
-        onPress: handleEndStream,
-      },
-    ]);
+    Alert.alert(
+      'End Broadcast',
+      'Are you sure you want to end this live stream for all viewers?',
+      [
+        { text: 'Keep Broadcasting', style: 'cancel' },
+        {
+          text: 'End Stream',
+          style: 'destructive',
+          onPress: handleEndStream,
+        },
+      ]
+    );
   }, [handleEndStream]);
 
-  // Intercept Android hardware back button
+  // Prevent accidental hardware back button on Android
   useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+    const backAction = () => {
       confirmEnd();
       return true;
-    });
-    return () => sub.remove();
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
   }, [confirmEnd]);
 
   const handleBack = useCallback(() => {
@@ -137,7 +143,7 @@ export default function BroadcastScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#EF4444" />
-        <Text style={styles.loadingText}>Connecting to broadcast server...</Text>
+        <Text style={styles.loadingText}>Initializing Studio Broadcast...</Text>
       </View>
     );
   }
@@ -159,12 +165,23 @@ export default function BroadcastScreen() {
             <View style={styles.topBar}>
               <View style={styles.badgeRow}>
                 <View style={styles.liveBadge}>
+                  <View style={styles.liveDot} />
                   <Text style={styles.liveText}>LIVE</Text>
                 </View>
+
                 <ViewerBadge count={viewerCount} />
+
+                <View style={styles.streamQualityPill}>
+                  <Text style={styles.streamQualityText}>⚡ 1080p</Text>
+                </View>
               </View>
 
-              <TouchableOpacity style={styles.endButton} onPress={confirmEnd} disabled={isEnding}>
+              <TouchableOpacity
+                style={styles.endButton}
+                onPress={confirmEnd}
+                disabled={isEnding}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.endButtonText}>
                   {isEnding ? 'Ending...' : 'End Stream'}
                 </Text>
@@ -199,7 +216,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#070913',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -207,44 +224,78 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
     marginTop: 14,
     fontSize: 15,
+    fontWeight: '600',
   },
   topBar: {
     position: 'absolute',
-    top: 50,
-    left: 16,
-    right: 16,
+    top: Platform.OS === 'ios' ? 52 : 36,
+    left: 14,
+    right: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 10,
-  },
+    backgroundColor: 'rgba(10, 14, 26, 0.75)',
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(10px)',
+  } as any,
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#EF4444',
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 14,
+    gap: 5,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFF',
   },
   liveText: {
     color: '#FFF',
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '900',
     letterSpacing: 0.5,
   },
+  streamQualityPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  streamQualityText: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   endButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    backgroundColor: 'rgba(239, 68, 68, 0.95)',
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: 14,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
   endButtonText: {
     color: '#FFF',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   chatOverlay: {
     position: 'absolute',
@@ -255,16 +306,17 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#EF4444',
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 16,
   },
   backButton: {
-    backgroundColor: '#374151',
+    backgroundColor: '#1E293B',
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   backButtonText: {
     color: '#FFF',
+    fontWeight: '600',
   },
 });

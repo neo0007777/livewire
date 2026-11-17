@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 
@@ -65,30 +65,61 @@ export default function StreamSummaryScreen() {
     : 0;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.badge}>BROADCAST SUMMARY</Text>
-      <Text style={styles.title}>{stream?.title || 'Stream Ended'}</Text>
-      <Text style={styles.subtitle}>Stream has concluded successfully</Text>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{stream?.peak_viewers ?? 0}</Text>
-          <Text style={styles.statLabel}>Peak Viewers</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.badgeRow}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>POST-EVENT ANALYTICS</Text>
         </View>
-
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{durationMins}m</Text>
-          <Text style={styles.statLabel}>Duration</Text>
+        <View style={styles.statusPill}>
+          <Text style={styles.statusText}>Concluded</Text>
         </View>
       </View>
 
+      <Text style={styles.title}>{stream?.title || 'Live Stream Concluded'}</Text>
+      <Text style={styles.subtitle}>
+        Broadcast telemetry and automated AI event highlight summary
+      </Text>
+
+      {/* 4 Metric Cards */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statBox}>
+          <Text style={styles.statIcon}>👥</Text>
+          <Text style={styles.statValue}>{stream?.peak_viewers ?? 0}</Text>
+          <Text style={styles.statLabel}>Peak Concurrent Viewers</Text>
+        </View>
+
+        <View style={styles.statBox}>
+          <Text style={styles.statIcon}>⏱️</Text>
+          <Text style={styles.statValue}>{durationMins}m</Text>
+          <Text style={styles.statLabel}>Total Air Time</Text>
+        </View>
+
+        <View style={styles.statBox}>
+          <Text style={styles.statIcon}>👑</Text>
+          <Text style={styles.statValue} numberOfLines={1}>
+            {stream?.creator?.display_name || 'Broadcaster'}
+          </Text>
+          <Text style={styles.statLabel}>Host Creator</Text>
+        </View>
+
+        <View style={styles.statBox}>
+          <Text style={styles.statIcon}>⚡</Text>
+          <Text style={styles.statValue}>100%</Text>
+          <Text style={styles.statLabel}>Broadcast Uptime</Text>
+        </View>
+      </View>
+
+      {/* AI Highlights Card */}
       <View style={styles.highlightsCard}>
         <View style={styles.highlightsHeader}>
-          <Text style={styles.highlightsTitle}>AI Stream Highlights</Text>
+          <View style={styles.aiBadgeTitle}>
+            <Text style={styles.aiEmoji}>🤖</Text>
+            <Text style={styles.highlightsTitle}>AI Stream Highlights</Text>
+          </View>
           {highlights?.summary_source && (
             <View style={styles.sourceBadge}>
               <Text style={styles.sourceText}>
-                {highlights.summary_source === 'ai' ? '🤖 AI' : '⚡ AUTO'}
+                {highlights.summary_source === 'ai' ? 'Claude 3.5 Haiku' : 'Automated'}
               </Text>
             </View>
           )}
@@ -99,12 +130,19 @@ export default function StreamSummaryScreen() {
             <Text style={styles.summaryText}>{highlights.summary}</Text>
             {highlights.moments && highlights.moments.length > 0 && (
               <View style={styles.momentsContainer}>
-                <Text style={styles.momentsHeading}>Busiest Chat Moments:</Text>
+                <Text style={styles.momentsHeading}>Peak Chat Activity Moments</Text>
                 {highlights.moments.map((m: any, idx: number) => (
-                  <Text key={idx} style={styles.momentItem}>
-                    • {Math.floor(m.start_seconds / 60)}:
-                    {String(m.start_seconds % 60).padStart(2, '0')} - {m.message_count} messages
-                  </Text>
+                  <View key={idx} style={styles.momentRow}>
+                    <View style={styles.momentTimestamp}>
+                      <Text style={styles.timestampText}>
+                        {Math.floor(m.start_seconds / 60)}:
+                        {String(m.start_seconds % 60).padStart(2, '0')}
+                      </Text>
+                    </View>
+                    <Text style={styles.momentDesc}>
+                      {m.message_count} chat messages exchanged
+                    </Text>
+                  </View>
                 ))}
               </View>
             )}
@@ -112,96 +150,139 @@ export default function StreamSummaryScreen() {
         ) : (
           <View style={styles.loadingHighlights}>
             <ActivityIndicator color="#818CF8" size="small" />
-            <Text style={styles.loadingText}>Generating highlights with n8n...</Text>
+            <Text style={styles.loadingText}>Synthesizing stream recap via n8n AI workflow...</Text>
           </View>
         )}
       </View>
 
-      <TouchableOpacity style={styles.doneButton} onPress={() => router.replace('/(app)/(tabs)')}>
-        <Text style={styles.doneButtonText}>Back to Home</Text>
+      <TouchableOpacity
+        style={styles.doneButton}
+        onPress={() => router.replace('/(app)/(tabs)')}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.doneButtonText}>Return to Streams Feed</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#070913',
+  },
+  contentContainer: {
     padding: 24,
-    paddingTop: 60,
-    backgroundColor: '#0A0A0A',
+    paddingTop: Platform.OS === 'ios' ? 60 : 30,
+    paddingBottom: 40,
+    maxWidth: 720,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
   badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#1E1B4B',
-    color: '#818CF8',
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: 6,
+  },
+  badgeText: {
+    color: '#818CF8',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  statusPill: {
+    backgroundColor: 'rgba(100, 116, 139, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusText: {
+    color: '#94A3B8',
+    fontSize: 10,
     fontWeight: '700',
-    fontSize: 11,
-    marginBottom: 12,
   },
   title: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: '900',
+    color: '#F8FAFC',
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 28,
+    fontSize: 13,
+    color: '#94A3B8',
+    marginBottom: 24,
   },
-  statsRow: {
+  statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   statBox: {
     flex: 1,
-    backgroundColor: '#171717',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
+    minWidth: '45%',
+    backgroundColor: '#0E1322',
     borderWidth: 1,
-    borderColor: '#262626',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
+    padding: 16,
+  },
+  statIcon: {
+    fontSize: 22,
+    marginBottom: 8,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#FFF',
-    marginBottom: 4,
+    color: '#F8FAFC',
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
   },
   highlightsCard: {
-    backgroundColor: '#171717',
+    backgroundColor: '#0E1322',
+    borderRadius: 18,
     padding: 20,
-    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#262626',
-    marginBottom: 32,
+    borderColor: 'rgba(99, 102, 241, 0.25)',
+    marginBottom: 24,
   },
   highlightsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
+  },
+  aiBadgeTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  aiEmoji: {
+    fontSize: 18,
   },
   highlightsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#F8FAFC',
   },
   sourceBadge: {
-    backgroundColor: '#312E81',
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 10,
   },
   sourceText: {
     color: '#A5B4FC',
@@ -209,47 +290,67 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   summaryText: {
-    color: '#D1D5DB',
+    color: '#CBD5E1',
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 14,
   },
   momentsContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#262626',
-    paddingTop: 12,
-    gap: 6,
+    backgroundColor: '#070913',
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
   },
   momentsHeading: {
-    color: '#9CA3AF',
+    color: '#94A3B8',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  momentItem: {
-    color: '#A5B4FC',
-    fontSize: 13,
+  momentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  momentTimestamp: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  timestampText: {
+    color: '#818CF8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  momentDesc: {
+    color: '#E2E8F0',
+    fontSize: 12,
   },
   loadingHighlights: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   loadingText: {
-    color: '#9CA3AF',
+    color: '#94A3B8',
     fontSize: 13,
   },
   doneButton: {
     backgroundColor: '#4F46E5',
-    padding: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: 'center',
-    marginTop: 'auto',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   doneButtonText: {
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });
-

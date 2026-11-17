@@ -11,7 +11,7 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (!displayName.trim() || !email.trim() || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Missing Fields', 'Please fill in all fields to create your account');
       return;
     }
     setLoading(true);
@@ -26,63 +26,80 @@ export default function SignUpScreen() {
     });
     setLoading(false);
     if (error) {
-      Alert.alert('Sign Up Failed', error.message);
+      Alert.alert('Registration Failed', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.badge}>LiveWire</Text>
-      <Text style={styles.title}>Create account</Text>
-      <Text style={styles.subtitle}>Join LiveWire to stream and interact live</Text>
+      <View style={styles.card}>
+        {/* Brand Header */}
+        <View style={styles.brandRow}>
+          <View style={styles.logoBadge}>
+            <Text style={styles.logoIcon}>⚡</Text>
+          </View>
+          <View>
+            <Text style={styles.brandTitle}>LIVEWIRE</Text>
+            <Text style={styles.brandSubtitle}>JOIN THE BROADCAST NETWORK</Text>
+          </View>
+        </View>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Display Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Alex Streamer"
-          placeholderTextColor="#666"
-          value={displayName}
-          onChangeText={setDisplayName}
-          maxLength={30}
-        />
+        <Text style={styles.title}>Create account</Text>
+        <Text style={styles.subtitle}>Stream, chat, and connect in real-time</Text>
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="creator@test.dev"
-          placeholderTextColor="#666"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <View style={styles.form}>
+          <Text style={styles.label}>CREATOR DISPLAY NAME</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Elena Streams"
+            placeholderTextColor="#475569"
+            value={displayName}
+            onChangeText={setDisplayName}
+            maxLength={30}
+          />
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          placeholderTextColor="#666"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+          <Text style={styles.label}>EMAIL ADDRESS</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="elena@livewire.dev"
+            placeholderTextColor="#475569"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.buttonText}>Sign Up</Text>
-          )}
-        </TouchableOpacity>
+          <Text style={styles.label}>PASSWORD</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••••••"
+            placeholderTextColor="#475569"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <Link href="/(auth)/sign-in" asChild>
-            <TouchableOpacity>
-              <Text style={styles.linkText}>Sign In</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSignUp}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Get Started on LiveWire</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <Link href="/(auth)/sign-in" asChild>
+              <TouchableOpacity>
+                <Text style={styles.linkText}>Sign In</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
         </View>
       </View>
     </View>
@@ -92,76 +109,116 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    padding: 20,
     justifyContent: 'center',
-    backgroundColor: '#0A0A0A',
+    alignItems: 'center',
+    backgroundColor: '#070913',
   },
-  badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#312E81',
+  card: {
+    backgroundColor: '#0E1322',
+    borderRadius: 24,
+    padding: 28,
+    width: '100%',
+    maxWidth: 440,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  logoBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoIcon: {
+    fontSize: 22,
+    color: '#FFF',
+  },
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#F8FAFC',
+    letterSpacing: 1.5,
+  },
+  brandSubtitle: {
+    fontSize: 9,
+    fontWeight: '800',
     color: '#818CF8',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-    fontWeight: '700',
-    fontSize: 12,
-    marginBottom: 16,
-    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 32,
+    fontSize: 13,
+    color: '#94A3B8',
+    marginBottom: 22,
   },
   form: {
     width: '100%',
   },
   label: {
-    fontSize: 13,
-    color: '#D1D5DB',
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#CBD5E1',
+    letterSpacing: 0.8,
     marginBottom: 6,
-    fontWeight: '500',
   },
   input: {
-    backgroundColor: '#171717',
-    borderWidth: 1,
-    borderColor: '#262626',
-    borderRadius: 10,
-    padding: 14,
+    backgroundColor: '#070913',
+    borderWidth: 1.5,
+    borderColor: '#1E293B',
+    borderRadius: 12,
+    padding: 13,
     color: '#FFFFFF',
-    fontSize: 15,
-    marginBottom: 18,
+    fontSize: 14,
+    marginBottom: 16,
   },
   button: {
     backgroundColor: '#4F46E5',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 22,
   },
   footerText: {
-    color: '#9CA3AF',
-    fontSize: 14,
+    color: '#94A3B8',
+    fontSize: 13,
   },
   linkText: {
     color: '#818CF8',
-    fontWeight: '600',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
