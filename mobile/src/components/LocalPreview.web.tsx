@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
-import { VideoCameraOffIcon, VideoCameraIcon, MicMutedIcon } from './Icons';
+import { VideoCameraOffIcon, VideoCameraIcon, MicMutedIcon, ScreenShareIcon } from './Icons';
 
 interface LocalPreviewProps {
   channel?: any;
@@ -8,6 +8,8 @@ interface LocalPreviewProps {
   isMicMuted?: boolean;
   isVideoMuted?: boolean;
   facingMode?: 'user' | 'environment';
+  isScreenSharing?: boolean;
+  onScreenShareChange?: (isSharing: boolean) => void;
 }
 
 export function LocalPreview({
@@ -15,9 +17,13 @@ export function LocalPreview({
   isMicMuted = false,
   isVideoMuted = false,
   facingMode = 'user',
+  isScreenSharing = false,
+  onScreenShareChange,
 }: LocalPreviewProps) {
   const videoRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -70,6 +76,7 @@ export function LocalPreview({
         stream.getAudioTracks().forEach((t) => (t.enabled = !isMicMuted));
         stream.getVideoTracks().forEach((t) => (t.enabled = !isVideoMuted));
 
+        cameraVideoTrackRef.current = stream.getVideoTracks()[0] || null;
         streamRef.current = stream;
         setLocalStream(stream);
         setHasPermission(true);
@@ -82,6 +89,10 @@ export function LocalPreview({
       isMounted = false;
       peersRef.current.forEach((pc) => pc.close());
       peersRef.current.clear();
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach((track) => track.stop());
+        screenStreamRef.current = null;
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -109,7 +120,7 @@ export function LocalPreview({
 
   // 4. Handle Camera Flip (front / environment)
   useEffect(() => {
-    if (!hasPermission) return;
+    if (!hasPermission || isScreenSharing) return;
 
     let isCurrent = true;
     async function switchCamera() {
@@ -126,6 +137,7 @@ export function LocalPreview({
 
         const newVideoTrack = newStream.getVideoTracks()[0];
         if (newVideoTrack && streamRef.current) {
+          cameraVideoTrackRef.current = newVideoTrack;
           const oldVideoTrack = streamRef.current.getVideoTracks()[0];
           if (oldVideoTrack) {
             oldVideoTrack.stop();
@@ -156,6 +168,100 @@ export function LocalPreview({
       isCurrent = false;
     };
   }, [facingMode]);
+
+  // 5. Handle Broadcaster Screen Sharing
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function handleScreenShareToggle() {
+      if (isScreenSharing) {
+        if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) {
+          onScreenShareChange?.(false);
+          return;
+        }
+
+        try {
+          const displayStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: false,
+          });
+
+          if (isCancelled) {
+            displayStream.getTracks().forEach((t) => t.stop());
+            return;
+          }
+
+          const screenTrack = displayStream.getVideoTracks()[0];
+          if (!screenTrack) {
+            onScreenShareChange?.(false);
+            return;
+          }
+
+          screenStreamRef.current = displayStream;
+
+          // Native browser "Stop Sharing" button listener
+          screenTrack.onended = () => {
+            onScreenShareChange?.(false);
+          };
+
+          if (streamRef.current) {
+            const currentVideo = streamRef.current.getVideoTracks()[0];
+            if (currentVideo) {
+              streamRef.current.removeTrack(currentVideo);
+            }
+            streamRef.current.addTrack(screenTrack);
+
+            peersRef.current.forEach((pc) => {
+              const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+              if (sender) {
+                sender.replaceTrack(screenTrack).catch(() => {});
+              }
+            });
+
+            if (videoRef.current) {
+              videoRef.current.srcObject = streamRef.current;
+            }
+          }
+        } catch (err) {
+          // Screen share cancelled or rejected by user
+          onScreenShareChange?.(false);
+        }
+      } else {
+        // Revert to camera feed
+        if (screenStreamRef.current) {
+          screenStreamRef.current.getTracks().forEach((t) => t.stop());
+          screenStreamRef.current = null;
+        }
+
+        const cameraTrack = cameraVideoTrackRef.current;
+        if (cameraTrack && streamRef.current) {
+          const currentTrack = streamRef.current.getVideoTracks()[0];
+          if (currentTrack) {
+            streamRef.current.removeTrack(currentTrack);
+          }
+          cameraTrack.enabled = !isVideoMuted;
+          streamRef.current.addTrack(cameraTrack);
+
+          peersRef.current.forEach((pc) => {
+            const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+            if (sender) {
+              sender.replaceTrack(cameraTrack).catch(() => {});
+            }
+          });
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = streamRef.current;
+          }
+        }
+      }
+    }
+
+    handleScreenShareToggle();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isScreenSharing]);
 
   // Bind local stream to video element
   useEffect(() => {
@@ -259,11 +365,20 @@ export function LocalPreview({
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
-          transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+          objectFit: isScreenSharing ? 'contain' : 'cover',
+          transform: isScreenSharing ? 'none' : (facingMode === 'user' ? 'scaleX(-1)' : 'none'),
           display: hasPermission && !isVideoMuted ? 'block' : 'none',
+          backgroundColor: '#000',
         } as any}
       />
+
+      {/* Screen Sharing Active floating badge */}
+      {isScreenSharing && (
+        <View style={styles.screenShareBadge}>
+          <ScreenShareIcon size={13} color="#818CF8" />
+          <Text style={styles.screenShareBadgeText}>Sharing Your Screen Live</Text>
+        </View>
+      )}
 
       {/* Video Muted Overlay */}
       {hasPermission && isVideoMuted && (
@@ -359,6 +474,27 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     fontWeight: '800',
+  },
+  screenShareBadge: {
+    position: 'absolute',
+    top: 146,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(30, 27, 75, 0.88)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  screenShareBadgeText: {
+    color: '#C7D2FE',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   fallbackContainer: {
     ...StyleSheet.absoluteFill,

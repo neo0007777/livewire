@@ -181,6 +181,40 @@ export function MonitorIcon({ size = 18, color = '#64748B' }: IconProps) {
   );
 }
 
+// Minimalist Screen Share Icon
+export function ScreenShareIcon({ size = 16, color = '#F8FAFC' }: IconProps) {
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: size * 0.9,
+          height: size * 0.65,
+          borderRadius: 3,
+          borderWidth: 1.5,
+          borderColor: color,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: 0,
+            height: 0,
+            borderLeftWidth: size * 0.16,
+            borderLeftColor: 'transparent',
+            borderRightWidth: size * 0.16,
+            borderRightColor: 'transparent',
+            borderBottomWidth: size * 0.22,
+            borderBottomColor: color,
+          }}
+        />
+      </View>
+      <View style={{ width: 1.5, height: size * 0.12, backgroundColor: color }} />
+      <View style={{ width: size * 0.45, height: 1.5, backgroundColor: color }} />
+    </View>
+  );
+}
+
 // Minimalist Bell Icon
 export function BellIcon({ size = 18, color = '#64748B' }: IconProps) {
   return (

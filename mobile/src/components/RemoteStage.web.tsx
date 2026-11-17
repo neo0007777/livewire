@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { VideoCameraOffIcon, MicMutedIcon, MicIcon } from './Icons';
+import { VideoCameraOffIcon, MicMutedIcon, MicIcon, ScreenShareIcon } from './Icons';
 
 interface RemoteStageProps {
   channel?: any;
@@ -13,6 +13,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
   const [isMuted, setIsMuted] = useState(true);
   const [isCreatorVideoPaused, setIsCreatorVideoPaused] = useState(false);
   const [isCreatorMicMuted, setIsCreatorMicMuted] = useState(false);
+  const [isCreatorScreenSharing, setIsCreatorScreenSharing] = useState(false);
 
   const videoRef = useRef<any>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -107,6 +108,9 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       if (typeof payload?.isMicMuted === 'boolean') {
         setIsCreatorMicMuted(payload.isMicMuted);
       }
+      if (typeof payload?.isScreenSharing === 'boolean') {
+        setIsCreatorScreenSharing(payload.isScreenSharing);
+      }
     };
 
     channel.on('broadcast', { event: 'p2p_offer' }, handleOffer);
@@ -148,10 +152,19 @@ export function RemoteStage({ channel }: RemoteStageProps) {
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: isCreatorScreenSharing ? 'contain' : 'cover',
           display: isConnected && !isCreatorVideoPaused ? 'block' : 'none',
+          backgroundColor: '#000',
         } as any}
       />
+
+      {/* Host Screen Sharing Indicator */}
+      {isConnected && isCreatorScreenSharing && (
+        <View style={styles.screenSharePill}>
+          <ScreenShareIcon size={12} color="#818CF8" />
+          <Text style={styles.screenShareText}>Host is Sharing Screen</Text>
+        </View>
+      )}
 
       {/* Broadcaster Video Paused State for Viewers */}
       {isConnected && isCreatorVideoPaused && (
@@ -272,6 +285,26 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     fontWeight: '800',
+  },
+  screenSharePill: {
+    position: 'absolute',
+    top: 96,
+    left: 14,
+    backgroundColor: 'rgba(30, 27, 75, 0.88)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  screenShareText: {
+    color: '#C7D2FE',
+    fontSize: 11,
+    fontWeight: '700',
   },
   muteButton: {
     position: 'absolute',

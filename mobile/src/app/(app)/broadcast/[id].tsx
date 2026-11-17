@@ -20,6 +20,7 @@ import {
   VideoCameraIcon,
   VideoCameraOffIcon,
   FlipCameraIcon,
+  ScreenShareIcon,
 } from '../../../components/Icons';
 import { endStream, fetchLiveKitToken, LiveKitTokenResponse } from '../../../lib/streams';
 import { useSessionStore } from '../../../stores/session';
@@ -40,6 +41,7 @@ export default function BroadcastScreen() {
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   // Chat hook
   const {
@@ -79,10 +81,10 @@ export default function BroadcastScreen() {
       channel.send({
         type: 'broadcast',
         event: 'creator_media_state',
-        payload: { isMicMuted, isVideoMuted },
+        payload: { isMicMuted, isVideoMuted, isScreenSharing },
       });
     }
-  }, [channel, isMicMuted, isVideoMuted]);
+  }, [channel, isMicMuted, isVideoMuted, isScreenSharing]);
 
   // Load LiveKit token
   useEffect(() => {
@@ -201,6 +203,8 @@ export default function BroadcastScreen() {
               isMicMuted={isMicMuted}
               isVideoMuted={isVideoMuted}
               facingMode={facingMode}
+              isScreenSharing={isScreenSharing}
+              onScreenShareChange={setIsScreenSharing}
             />
 
             {/* Top Control Bar with Status & Controls */}
@@ -290,6 +294,32 @@ export default function BroadcastScreen() {
                     style={[
                       styles.statusDot,
                       isVideoMuted ? styles.statusDotRed : styles.statusDotGreen,
+                    ]}
+                  />
+                </TouchableOpacity>
+
+                {/* Screen Share Toggle Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.mediaBtn,
+                    isScreenSharing ? styles.mediaBtnScreenActive : styles.mediaBtnActive,
+                  ]}
+                  onPress={() => setIsScreenSharing((prev) => !prev)}
+                  activeOpacity={0.75}
+                >
+                  <ScreenShareIcon size={15} color={isScreenSharing ? '#818CF8' : '#CBD5E1'} />
+                  <Text
+                    style={[
+                      styles.mediaBtnText,
+                      isScreenSharing && styles.mediaBtnTextScreenActive,
+                    ]}
+                  >
+                    {isScreenSharing ? 'Stop Share' : 'Share Screen'}
+                  </Text>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      isScreenSharing ? styles.statusDotIndigo : styles.statusDotOff,
                     ]}
                   />
                 </TouchableOpacity>
@@ -453,6 +483,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderColor: 'rgba(239, 68, 68, 0.4)',
   },
+  mediaBtnScreenActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    borderColor: 'rgba(99, 102, 241, 0.55)',
+  },
   mediaBtnText: {
     color: '#F8FAFC',
     fontSize: 12,
@@ -460,6 +494,9 @@ const styles = StyleSheet.create({
   },
   mediaBtnTextMuted: {
     color: '#FCA5A5',
+  },
+  mediaBtnTextScreenActive: {
+    color: '#C7D2FE',
   },
   statusDot: {
     width: 6,
@@ -472,6 +509,12 @@ const styles = StyleSheet.create({
   },
   statusDotRed: {
     backgroundColor: '#EF4444',
+  },
+  statusDotIndigo: {
+    backgroundColor: '#818CF8',
+  },
+  statusDotOff: {
+    backgroundColor: '#64748B',
   },
   chatOverlay: {
     position: 'absolute',

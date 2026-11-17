@@ -11,6 +11,8 @@ interface LocalPreviewProps {
   isMicMuted?: boolean;
   isVideoMuted?: boolean;
   facingMode?: 'user' | 'environment';
+  isScreenSharing?: boolean;
+  onScreenShareChange?: (isSharing: boolean) => void;
 }
 
 export function LocalPreview({ isVideoMuted = false }: LocalPreviewProps) {
