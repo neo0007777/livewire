@@ -134,7 +134,7 @@ export default function LiveStreamsScreen() {
       {/* Streams Feed */}
       <FlatList
         data={filteredStreams}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.id || `stream-${index}`}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#818CF8" />
         }

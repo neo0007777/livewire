@@ -19,7 +19,7 @@ import { SendIcon } from './Icons';
 interface ChatPanelProps {
   messages: ChatMessage[];
   onSend: (content: string) => Promise<void>;
-  onRetry: (clientMessageId: string) => void;
+  onRetry: (id: string) => void;
   isEnded?: boolean;
 }
 
@@ -113,7 +113,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
       <FlatList
         ref={flatListRef}
         data={displayMessages}
-        keyExtractor={(item) => item.client_message_id}
+        keyExtractor={(item, index) => item.id || `msg-${index}`}
         inverted
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.messageList}
@@ -157,7 +157,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
               )}
               {item.status === 'failed' && (
                 <TouchableOpacity
-                  onPress={() => onRetry(item.client_message_id)}
+                  onPress={() => onRetry(item.id)}
                   style={styles.retryBtn}
                 >
                   <Text style={styles.retryText}>Retry</Text>

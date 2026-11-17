@@ -79,7 +79,7 @@ export default function InboxScreen() {
 
       <FlatList
         data={notifications}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.id || `notif-${index}`}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#818CF8" />}
         contentContainerStyle={notifications.length === 0 ? styles.emptyList : styles.list}
         renderItem={({ item }) => {
