@@ -1,8 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTracks, TrackReference } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { VideoTrack, useLocalParticipant } from '@livekit/react-native';
+import {
+  RTCPeerConnection,
+  RTCIceCandidate,
+  RTCSessionDescription,
+  MediaStream,
+} from '@livekit/react-native-webrtc';
 import { VideoCameraOffIcon } from './Icons';
 import { requestBroadcastPermissions } from '../lib/permissions';
 
@@ -17,6 +23,7 @@ interface LocalPreviewProps {
 }
 
 export function LocalPreview({
+  channel,
   isVideoMuted = false,
   isMicMuted = false,
   facingMode = 'user',
@@ -25,6 +32,92 @@ export function LocalPreview({
   const { localParticipant, cameraTrack, isCameraEnabled, lastCameraError } = useLocalParticipant();
   const tracks = useTracks([Track.Source.Camera]);
   const trackFromHook = tracks.find((t) => t.participant.isLocal);
+  const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+
+  // WebRTC P2P direct transmission for web and cross-platform viewers
+  useEffect(() => {
+    if (!channel || !cameraTrack?.track) return;
+    const videoTrack = cameraTrack.track;
+
+    const handleRequestStream = async ({ payload }: any) => {
+      const viewerId = payload?.viewerId;
+      if (!viewerId) return;
+
+      if (peersRef.current.has(viewerId)) {
+        peersRef.current.get(viewerId)?.close();
+        peersRef.current.delete(viewerId);
+      }
+
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      });
+      peersRef.current.set(viewerId, pc);
+
+      if ((videoTrack as any).mediaStreamTrack) {
+        const ms = new MediaStream([(videoTrack as any).mediaStreamTrack]);
+        pc.addTrack((videoTrack as any).mediaStreamTrack, ms);
+      }
+
+      pc.onicecandidate = (event: any) => {
+        if (event.candidate && channel) {
+          channel.send({
+            type: 'broadcast',
+            event: 'p2p_ice',
+            payload: { targetId: viewerId, fromId: 'creator', candidate: event.candidate },
+          });
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        channel.send({
+          type: 'broadcast',
+          event: 'p2p_offer',
+          payload: { targetId: viewerId, offer },
+        });
+      } catch (err) {
+        console.warn('Error creating P2P offer:', err);
+      }
+    };
+
+    const handleAnswer = async ({ payload }: any) => {
+      const viewerId = payload?.viewerId;
+      const pc = peersRef.current.get(viewerId);
+      if (pc && payload?.answer) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
+        } catch (err) {
+          console.warn('Error setting P2P remote description:', err);
+        }
+      }
+    };
+
+    const handleIce = async ({ payload }: any) => {
+      if (payload?.targetId === 'creator' && payload?.candidate) {
+        const pc = peersRef.current.get(payload?.fromId);
+        if (pc) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          } catch (err) {
+            console.warn('Error adding P2P ICE candidate:', err);
+          }
+        }
+      }
+    };
+
+    channel.on('broadcast', { event: 'p2p_request_stream' }, handleRequestStream);
+    channel.on('broadcast', { event: 'p2p_answer' }, handleAnswer);
+    channel.on('broadcast', { event: 'p2p_ice' }, handleIce);
+
+    return () => {
+      peersRef.current.forEach((pc) => pc.close());
+      peersRef.current.clear();
+    };
+  }, [channel, cameraTrack?.track]);
 
   // Active camera initialization: ensure setCameraEnabled is triggered
   useEffect(() => {

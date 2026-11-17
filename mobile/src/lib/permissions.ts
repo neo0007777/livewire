@@ -45,3 +45,4 @@ export async function requestBroadcastPermissions(): Promise<boolean> {
     return false;
   }
 }
+
