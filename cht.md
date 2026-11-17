@@ -486,3 +486,14 @@
   2. **Host AudioSession Initialization:** Added `AudioSession.startAudioSession()` to `LocalPreview.native.tsx` to properly configure Android's `AudioManager` for live microphone capture.
   3. **Explicit Secondary Microphone Fallback:** Added explicit `{ audio: true }` capture fallback in `LocalPreview.native.tsx` if the combined camera stream lacks an audio track.
 - Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,007 bundled modules.
+
+### Turn 33: Native APK vs. Web Runtime Discrepancy & Cloud Build Queue Analysis
+**User:**
+> "iam saying over my latop and Phone via the New HTTPS Tunnel in both of them its working excillent but when i put in apk it doent work"
+> [Screenshot showing EAS Build #9 in Free Tier Queue with ~25m wait]
+
+**Action Taken:**
+- Reconciled runtime behavioral divergence between HTTPS web tunnel and native Android APK:
+  1. **Web Environment Validation:** The successful end-to-end broadcast between laptop and mobile browser via the encrypted tunnel validates the core architecture: Supabase Realtime signaling, WebRTC SDP offer/answer handshakes, OpenRelay TURN NAT traversal, and live chat/presence synchronizations are operating correctly.
+  2. **Installed APK Version Discrepancy:** Identified that the physical phones are currently executing Build #8 (or earlier), which still embodies the native C++ `_reactTag` decoupling bug and uninitialized `AudioSession` hardware microphone routing.
+  3. **Cloud Build Pipeline State:** Inspected Build #9 (`09688fe0-aea4-4dda-9f47-90e206bce03a`) on EAS Cloud. The job is queued in the EAS Free Tier queue awaiting builder allocation. The native stream tag and audio fixes committed in `fb790e4` will become active once Build #9 compiles into the updated APK.
