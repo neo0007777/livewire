@@ -5,6 +5,30 @@ import { supabase } from '../../../lib/supabase';
 import { cleanStreamTitle, getStreamCategory } from '../../../lib/categories';
 import { EyeIcon, UserIcon, BroadcastIcon, MonitorIcon } from '../../../components/Icons';
 
+function formatMomentRange(m: any) {
+  const startSec = typeof m?.start_seconds === 'number' ? m.start_seconds : 0;
+  const endSec = typeof m?.end_seconds === 'number' ? m.end_seconds : startSec + 30;
+  const startMin = Math.floor(startSec / 60);
+  const startRemainSec = startSec % 60;
+  const endMin = Math.floor(endSec / 60);
+  const endRemainSec = endSec % 60;
+
+  const startStr = `${startMin}:${String(startRemainSec).padStart(2, '0')}`;
+  const endStr = `${endMin}:${String(endRemainSec).padStart(2, '0')}`;
+  return `${startStr} – ${endStr}`;
+}
+
+function formatSummaryText(text?: string) {
+  if (!text) return '';
+  return text.replace(/occurred at (\d{1,2}:\d{2})\./, (_match, p1) => {
+    const parts = p1.split(':');
+    const totalSec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    const endSec = totalSec + 30;
+    const endStr = `${String(Math.floor(endSec / 60)).padStart(2, '0')}:${String(endSec % 60).padStart(2, '0')}`;
+    return `occurred between ${p1} – ${endStr}.`;
+  });
+}
+
 export default function StreamSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const streamId = Array.isArray(id) ? id[0] : (id || '');
@@ -175,7 +199,7 @@ export default function StreamSummaryScreen() {
 
         {highlights ? (
           <View>
-            <Text style={styles.summaryText}>{highlights.summary}</Text>
+            <Text style={styles.summaryText}>{formatSummaryText(highlights.summary)}</Text>
             {highlights.moments && highlights.moments.length > 0 && (
               <View style={styles.momentsContainer}>
                 <Text style={styles.momentsHeading}>Peak Chat Activity Moments</Text>
@@ -183,8 +207,7 @@ export default function StreamSummaryScreen() {
                   <View key={idx} style={styles.momentRow}>
                     <View style={styles.momentTimestamp}>
                       <Text style={styles.timestampText}>
-                        {Math.floor(m.start_seconds / 60)}:
-                        {String(m.start_seconds % 60).padStart(2, '0')}
+                        {formatMomentRange(m)}
                       </Text>
                     </View>
                     <Text style={styles.momentDesc}>
@@ -392,8 +415,8 @@ const styles = StyleSheet.create({
   },
   momentTimestamp: {
     backgroundColor: '#1E293B',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
   },
   timestampText: {

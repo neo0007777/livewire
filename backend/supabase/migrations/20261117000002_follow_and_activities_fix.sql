@@ -55,10 +55,12 @@ begin
 
   if v_total_msgs > 0 and jsonb_array_length(v_moments) > 0 then
     v_top_moment_time := lpad((((v_moments->0->>'start_seconds')::int) / 60)::text, 2, '0') || ':' ||
-                         lpad((((v_moments->0->>'start_seconds')::int) % 60)::text, 2, '0');
+                         lpad((((v_moments->0->>'start_seconds')::int) % 60)::text, 2, '0') || ' – ' ||
+                         lpad((((coalesce(v_moments->0->>'end_seconds', ((v_moments->0->>'start_seconds')::int + 30)::text))::int) / 60)::text, 2, '0') || ':' ||
+                         lpad((((coalesce(v_moments->0->>'end_seconds', ((v_moments->0->>'start_seconds')::int + 30)::text))::int) % 60)::text, 2, '0');
     v_summary := '"' || v_stream.title || '" ran ' || round(v_duration / 60.0, 1)::text || ' min, peaked at ' ||
                  v_stream.peak_viewers || ' viewers with ' || v_total_msgs ||
-                 ' chat messages. Peak chat excitement occurred at ' || v_top_moment_time || '.';
+                 ' chat messages. Peak chat excitement occurred between ' || v_top_moment_time || '.';
   else
     v_summary := '"' || v_stream.title || '" ran ' || round(v_duration / 60.0, 1)::text || ' min, peaked at ' ||
                  v_stream.peak_viewers || ' viewers. Broadcast concluded smoothly.';

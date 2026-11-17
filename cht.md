@@ -201,3 +201,35 @@
   - **Creator Profile & Analytics (`profile.tsx`, `summary/[id].tsx`):** Added live follower/following/stream counts, system engine configuration cards, and a 4-card post-stream analytics dashboard with Claude 3.5 Haiku recap badges.
   - **Auth Screens (`sign-in.tsx`, `sign-up.tsx`):** Modernized with glassmorphic cards, glowing branding, and one-tap test presets for instant evaluator switching between broadcaster and viewer accounts.
 - Verified TypeScript compilation (`npx tsc --noEmit`) and Expo Android production bundle export (`1,739 modules, 0 errors`).
+
+### Turn 13: WebRTC Screen Sharing & Creator Controls
+**User:**
+> "Can we also give the broadcaster option to share his screen"
+
+**Action Taken:**
+- Integrated browser-native display media capture (`navigator.mediaDevices.getDisplayMedia`) into the broadcaster workflow:
+  - Added dedicated `ScreenShareIcon` vector primitive with active indigo badge and glowing status indicator.
+  - Implemented seamless WebRTC video track swapping across all active peer connections without interrupting audio or requiring room reconnection.
+  - Wired listeners on the display track's `ended` event to gracefully revert to the user's camera when stopped via native browser chrome.
+  - Configured viewer stages to dynamically detect screen sharing, apply aspect-ratio containment (`objectFit: contain`), and render a "Host is Sharing Screen" status pill.
+
+### Turn 14: Follow System & Activity Notification Engine
+**User:**
+> "The following button is not working and whenever someone follow I should get it in my activities"
+
+**Action Taken:**
+- Resolved Supabase Row Level Security policy constraints preventing cross-user notification delivery:
+  - Updated `public.notifications` RLS policies to permit authenticated insert operations.
+  - Expanded `notifications_type_check` domain constraint to support `new_follower` event types.
+  - Created atomic `toggle_follow(p_creator_id uuid)` PostgreSQL RPC function with security definer privileges to update `follows` records and dispatch inbox notifications transactionally.
+  - Fixed viewer interface to render distinct `You (Host)` badges when viewing one's own stream, preventing self-follow errors.
+
+### Turn 15: Post-Event Analytics Duration Window Formatting
+**User:**
+> "Instead of 0:00 I would prefer 0:00 to 0:30 or anything a duration that will be better"
+
+**Action Taken:**
+- Refactored peak chat excitement representation from instantaneous timestamps to time range intervals (`0:00 – 0:30`):
+  - Updated `mobile/src/app/(app)/summary/[id].tsx` with `formatMomentRange` helper to calculate and display bucket intervals (`start_seconds` through `end_seconds`).
+  - Enhanced summary narrative formatter to dynamically transform single timestamp references into duration ranges (`between 00:00 – 00:30`).
+  - Updated PostgreSQL `generate_stream_highlights` RPC function and n8n workflow definitions (`03-stream-ended-highlights.json`, `03-stream-ended-highlights-gemini.json`) to standardize 30-second interval ranges across automated recaps.
