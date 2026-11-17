@@ -172,7 +172,11 @@ export default function LiveStreamsScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#818CF8" />
         }
-        contentContainerStyle={filteredStreams.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={
+          filteredStreams.length === 0
+            ? styles.emptyList
+            : [styles.list, { paddingBottom: Math.max(80, insets.bottom + 64) }]
+        }
         renderItem={({ item }) => {
           const cat = getStreamCategory(item.title);
           const cleanTitle = cleanStreamTitle(item.title);

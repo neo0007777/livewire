@@ -134,7 +134,10 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={[
         styles.contentContainer,
-        { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24) },
+        {
+          paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24),
+          paddingBottom: Math.max(80, insets.bottom + 64),
+        },
       ]}
     >
       <Text style={styles.header}>Creator Profile</Text>

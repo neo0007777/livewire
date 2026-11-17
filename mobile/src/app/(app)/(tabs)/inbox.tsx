@@ -88,7 +88,11 @@ export default function InboxScreen() {
         data={notifications}
         keyExtractor={(item, index) => item.id || `notif-${index}`}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#818CF8" />}
-        contentContainerStyle={notifications.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={
+          notifications.length === 0
+            ? styles.emptyList
+            : [styles.list, { paddingBottom: Math.max(80, insets.bottom + 64) }]
+        }
         renderItem={({ item }) => {
           const isUnread = !item.read_at;
 
