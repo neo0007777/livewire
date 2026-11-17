@@ -21,6 +21,7 @@ import { usePresenceCount } from '../../../hooks/usePresenceCount';
 import { supabase } from '../../../lib/supabase';
 import { getStreamCategory, cleanStreamTitle } from '../../../lib/categories';
 import { CloseIcon, MonitorIcon, CheckIcon } from '../../../components/Icons';
+import { toggleFollowUser } from '../../../lib/follows';
 
 export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -116,44 +117,12 @@ export default function WatchScreen() {
     setIsFollowing(nextState);
 
     try {
-      // 1. Try atomic RPC
-      const { data, error } = await supabase.rpc('toggle_follow', {
-        p_creator_id: streamInfo.creator_id,
-      });
-
-      if (!error && data && typeof data.is_following === 'boolean') {
-        setIsFollowing(data.is_following);
-        return;
-      }
-
-      // 2. Direct fallback
-      if (!nextState) {
-        await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', session.user.id)
-          .eq('creator_id', streamInfo.creator_id);
-      } else {
-        await supabase.from('follows').upsert(
-          {
-            follower_id: session.user.id,
-            creator_id: streamInfo.creator_id,
-          },
-          { onConflict: 'follower_id,creator_id' }
-        );
-
-        const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
-        await supabase.from('notifications').insert({
-          user_id: streamInfo.creator_id,
-          type: 'new_follower',
-          title: 'New Follower!',
-          body: `${myName} started following you.`,
-          data: { follower_id: session.user.id },
-          dedupe_key: `follow:${session.user.id}:${streamInfo.creator_id}:${Date.now()}`,
-        });
-      }
+      const myName = profile?.display_name || session.user.email?.split('@')[0];
+      const res = await toggleFollowUser(session.user.id, streamInfo.creator_id, myName);
+      setIsFollowing(res.isFollowing);
     } catch (err) {
       console.log('Follow toggle error:', err);
+      setIsFollowing(!nextState);
     }
   };
 

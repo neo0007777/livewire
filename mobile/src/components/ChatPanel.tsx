@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
 import { SendIcon, ClockIcon } from './Icons';
 import { OfflineBanner } from './OfflineBanner';
+import { toggleFollowUser } from '../lib/follows';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -79,50 +80,29 @@ export function ChatPanel({
       });
 
       try {
-        const { data, error } = await supabase.rpc('toggle_follow', {
-          p_creator_id: targetUserId,
+        const myName = profile?.display_name || session.user.email?.split('@')[0];
+        const res = await toggleFollowUser(session.user.id, targetUserId, myName);
+
+        setFollowedIds((prev) => {
+          const next = new Set(prev);
+          if (res.isFollowing) {
+            next.add(targetUserId);
+          } else {
+            next.delete(targetUserId);
+          }
+          return next;
         });
-
-        if (!error && data && typeof data.is_following === 'boolean') {
-          setFollowedIds((prev) => {
-            const next = new Set(prev);
-            if (data.is_following) {
-              next.add(targetUserId);
-            } else {
-              next.delete(targetUserId);
-            }
-            return next;
-          });
-          return;
-        }
-
-        if (isFollowing) {
-          await supabase
-            .from('follows')
-            .delete()
-            .eq('follower_id', session.user.id)
-            .eq('creator_id', targetUserId);
-        } else {
-          await supabase.from('follows').upsert(
-            {
-              follower_id: session.user.id,
-              creator_id: targetUserId,
-            },
-            { onConflict: 'follower_id,creator_id' }
-          );
-
-          const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
-          await supabase.from('notifications').insert({
-            user_id: targetUserId,
-            type: 'new_follower',
-            title: 'New Follower!',
-            body: `${myName} started following you from live chat.`,
-            data: { follower_id: session.user.id },
-            dedupe_key: `follow:${session.user.id}:${targetUserId}:${Date.now()}`,
-          });
-        }
       } catch (e) {
-        // Handled
+        // Revert on error
+        setFollowedIds((prev) => {
+          const next = new Set(prev);
+          if (isFollowing) {
+            next.add(targetUserId);
+          } else {
+            next.delete(targetUserId);
+          }
+          return next;
+        });
       }
     },
     [session?.user?.id, session?.user?.email, profile?.display_name, followedIds]

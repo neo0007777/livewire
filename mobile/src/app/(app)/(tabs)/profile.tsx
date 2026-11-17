@@ -12,6 +12,7 @@ import {
 import { supabase } from '../../../lib/supabase';
 import { useSessionStore } from '../../../stores/session';
 import { CheckIcon, UserIcon } from '../../../components/Icons';
+import { toggleFollowUser } from '../../../lib/follows';
 
 interface UserProfileItem {
   id: string;
@@ -81,15 +82,11 @@ export default function ProfileScreen() {
     setActionLoadingId(targetUserId);
 
     try {
-      const { error } = await supabase.rpc('toggle_follow', {
-        p_creator_id: targetUserId,
-      });
-
-      if (!error) {
-        await loadFollowData();
-      }
+      const myName = profile?.display_name || session.user.email?.split('@')[0];
+      await toggleFollowUser(session.user.id, targetUserId, myName);
+      await loadFollowData();
     } catch (err) {
-      console.error('[Profile] toggle_follow failed:', err);
+      console.error('[Profile] toggleFollowUser failed:', err);
     } finally {
       setActionLoadingId(null);
     }
@@ -282,7 +279,11 @@ export default function ProfileScreen() {
                           isFollowingUser ? styles.unfollowBtnText : styles.followBtnText,
                         ]}
                       >
-                        {isFollowingUser ? 'Following' : '+ Follow'}
+                        {isFollowingUser
+                          ? activeTab === 'following'
+                            ? 'Unfollow'
+                            : 'Following'
+                          : '+ Follow'}
                       </Text>
                     )}
                   </TouchableOpacity>
