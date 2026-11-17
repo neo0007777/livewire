@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -38,19 +38,41 @@ export default function LiveStreamsScreen() {
   const { data: streams = [], refetch, isLoading } = useQuery<StreamItem[]>({
     queryKey: ['live_streams'],
     queryFn: async () => {
-      const recent = new Date(Date.now() - 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('streams')
         .select('id, title, current_viewers, started_at, creator:profiles(display_name)')
         .eq('status', 'live')
-        .gt('last_heartbeat_at', recent)
-        .order('current_viewers', { ascending: false });
+        .order('started_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as unknown as StreamItem[];
     },
-    refetchInterval: 10000,
+    refetchInterval: 3000,
   });
+
+  // Realtime subscription to instantly update feed when any stream starts or ends
+  useEffect(() => {
+    const channelName = 'streams_live_feed';
+    const existing = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+    if (existing) {
+      supabase.removeChannel(existing);
+    }
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'streams' },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
