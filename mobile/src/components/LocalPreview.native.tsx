@@ -52,15 +52,49 @@ export function LocalPreview({
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
 
-      const stream = (await mediaDevices.getUserMedia({
-        video: {
-          facingMode: facing,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: 30,
-        },
-        audio: true,
-      })) as MediaStream;
+      let stream: MediaStream | null = null;
+      try {
+        stream = (await mediaDevices.getUserMedia({
+          video: {
+            facingMode: facing,
+            width: 1280,
+            height: 720,
+            frameRate: 30,
+          },
+          audio: true,
+        })) as MediaStream;
+      } catch (err1) {
+        try {
+          stream = (await mediaDevices.getUserMedia({
+            video: {
+              facingMode: facing,
+              width: 640,
+              height: 480,
+              frameRate: 24,
+            },
+            audio: true,
+          })) as MediaStream;
+        } catch (err2) {
+          try {
+            stream = (await mediaDevices.getUserMedia({
+              video: { facingMode: facing },
+              audio: true,
+            })) as MediaStream;
+          } catch (err3) {
+            try {
+              stream = (await mediaDevices.getUserMedia({
+                video: true,
+                audio: true,
+              })) as MediaStream;
+            } catch (err4) {
+              stream = (await mediaDevices.getUserMedia({
+                video: true,
+                audio: false,
+              })) as MediaStream;
+            }
+          }
+        }
+      }
 
       // Apply initial mute states
       stream.getVideoTracks().forEach((t) => {
@@ -76,31 +110,8 @@ export function LocalPreview({
       currentFacingRef.current = facing;
     } catch (err) {
       console.warn('[LocalPreview.native] Camera initialization error:', err);
-      // Fallback: video only
-      try {
-        const videoOnly = (await mediaDevices.getUserMedia({
-          video: {
-            facingMode: facing,
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: 30,
-          },
-          audio: false,
-        })) as MediaStream;
-
-        videoOnly.getVideoTracks().forEach((t) => {
-          t.enabled = !isVideoMuted;
-        });
-
-        streamRef.current = videoOnly;
-        setLocalStream(videoOnly);
-        setIsInitializing(false);
-        currentFacingRef.current = facing;
-      } catch (videoErr) {
-        console.error('[LocalPreview.native] Fallback video-only failed:', videoErr);
-        setPermissionDenied(true);
-        setIsInitializing(false);
-      }
+      setPermissionDenied(true);
+      setIsInitializing(false);
     }
   }, [isVideoMuted, isMicMuted]);
 

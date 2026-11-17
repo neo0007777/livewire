@@ -61,8 +61,12 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     // Handle remote track arrival
     pc.ontrack = (event: any) => {
       if (!isMounted) return;
-      if (event.streams && event.streams[0]) {
-        setP2pStream(event.streams[0]);
+      let stream = event.streams && event.streams[0];
+      if (!stream && event.track) {
+        stream = new MediaStream([event.track]);
+      }
+      if (stream) {
+        setP2pStream(stream);
         isP2pConnectedRef.current = true;
         setConnectionStatus('connected');
       }
