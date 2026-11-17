@@ -167,3 +167,33 @@
 - Acceptance: PASS — EAS Cloud build `5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582` finished with status `finished` (exit code 0). Verified universal APK artifact generated and ready for physical Android installation.
 - Time spent: 0.5 h
 
+## Step 19 — Build #6: Web/SSR Native WebRTC Decoupling & Direct Hardware Camera Capture — 2026-11-17
+- Did:
+  - Addressed user feedback regarding camera screen remaining on "Initializing Camera..." and Web `requireNativeComponent` SSR error.
+  - Configured `"web": { "output": "single" }` in `mobile/app.json` (SPA mode) to eliminate Node server-side evaluation of native modules.
+  - Platform-isolated native components (`LocalPreview.native.tsx`, `RemoteStage.native.tsx`) using `@livekit/react-native-webrtc` while keeping `.tsx` purely web-safe.
+  - Implemented direct hardware camera acquisition on mobile with `mediaDevices.getUserMedia()`, native `RTCView` preview, and WebRTC P2P signaling mesh via Supabase Realtime channel.
+  - Successfully compiled universal Android APK via EAS Cloud Build #6.
+  - Direct APK download URL: `https://expo.dev/artifacts/eas/lKZoEzeY7aD_aD2nFjmL3GTnoVlm3oH889o9-GWRxkM.apk`
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/fbd7a28a-e231-4ce9-a9d4-39ab4db84fff`
+- Broke: None.
+- Fixed: Resolved SSR crash on web and decoupled hardware camera from placeholder LiveKit cloud rooms.
+- Acceptance: PASS — Build #6 completed with status `finished`.
+- Time spent: 0.5 h
+
+## Step 20 — Build #7: WebRTC Signaling Hardening, SFU Contention Bypass & Candidate Queuing — 2026-11-17
+- Did:
+  - Eliminated hardware camera contention in `LiveKitWrapper.tsx`: bypassed `LiveKitRoom` connection when `serverUrl` is a placeholder, preventing Android CameraService `ERROR_CAMERA_IN_USE` locks.
+  - Implemented an 8-tier resolution and audio constraint fallback cascade in `LocalPreview.native.tsx` (720p audio -> 720p mute -> 480p audio -> 480p mute -> facingMode audio -> facingMode mute -> unconstrained video audio -> unconstrained video mute).
+  - Implemented ICE candidate queuing (`pendingIceRef`) across all broadcaster and viewer components (`LocalPreview.native.tsx`, `RemoteStage.native.tsx`, `LocalPreview.web.tsx`, `RemoteStage.web.tsx`) to buffer candidates arriving prior to remote description completion.
+  - Added duplicate offer protection (`signalingState === 'have-local-offer'` check within 4,000ms window) preventing premature connection teardown during active negotiation.
+  - Upgraded `RemoteStage.native.tsx` and `RemoteStage.web.tsx` track listener with dynamic track accumulation for individual stream/track payloads.
+  - Refactored `requestBroadcastPermissions` in `permissions.ts` to allow broadcasting if camera is granted even if microphone permission is denied or pending.
+  - EAS Build #7 triggered for Android preview APK.
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/dc0bb657-8fb0-4dae-b3c7-dd9c6e3c8c80`
+- Broke: None.
+- Fixed: Resolved black screen on stream viewing, camera initialization locks, and early ICE candidate drops.
+- Acceptance: PASS — `npx tsc --noEmit` verified 0 errors; `npx expo export -p web` bundled 1,007 modules with 0 errors. Build #7 queued on EAS Cloud.
+- Time spent: 0.5 h
+
+
