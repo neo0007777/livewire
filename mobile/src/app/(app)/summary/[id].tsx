@@ -167,7 +167,7 @@ export default function StreamSummaryScreen() {
           {highlights?.summary_source && (
             <View style={styles.sourceBadge}>
               <Text style={styles.sourceText}>
-                {highlights.summary_source === 'ai' ? 'Gemini AI Flash' : 'Automated Recap'}
+                {highlights.summary_source === 'ai' ? 'AI Generated' : 'Rule-Based Recap'}
               </Text>
             </View>
           )}
@@ -198,7 +198,7 @@ export default function StreamSummaryScreen() {
         ) : (
           <View style={styles.loadingHighlights}>
             <ActivityIndicator color="#818CF8" size="small" />
-            <Text style={styles.loadingText}>Synthesizing stream recap via n8n AI workflow...</Text>
+            <Text style={styles.loadingText}>Synthesizing stream recap and peak moments...</Text>
             <TouchableOpacity
               style={styles.generateNowBtn}
               onPress={handleManualGenerate}

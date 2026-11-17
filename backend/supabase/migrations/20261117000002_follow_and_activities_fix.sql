@@ -67,11 +67,11 @@ begin
   insert into public.stream_highlights
     (stream_id, peak_viewers, total_messages, duration_seconds, moments, summary, summary_source)
   values
-    (p_stream_id, v_stream.peak_viewers, v_total_msgs, v_duration, v_moments, v_summary, 'automated')
+    (p_stream_id, v_stream.peak_viewers, v_total_msgs, v_duration, v_moments, v_summary, 'rule')
   on conflict (stream_id) do update
     set moments = excluded.moments,
         summary = case when stream_highlights.summary_source = 'ai' then stream_highlights.summary else excluded.summary end,
-        summary_source = stream_highlights.summary_source,
+        summary_source = coalesce(stream_highlights.summary_source, excluded.summary_source),
         total_messages = excluded.total_messages,
         peak_viewers = excluded.peak_viewers,
         duration_seconds = excluded.duration_seconds
