@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
+import { cleanStreamTitle, getStreamCategory } from '../../../lib/categories';
 
 export default function StreamSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -70,12 +71,19 @@ export default function StreamSummaryScreen() {
         <View style={styles.badge}>
           <Text style={styles.badgeText}>POST-EVENT ANALYTICS</Text>
         </View>
+        {getStreamCategory(stream?.title) && (
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryBadgeText}>
+              {getStreamCategory(stream?.title)?.icon} {getStreamCategory(stream?.title)?.badge}
+            </Text>
+          </View>
+        )}
         <View style={styles.statusPill}>
           <Text style={styles.statusText}>Concluded</Text>
         </View>
       </View>
 
-      <Text style={styles.title}>{stream?.title || 'Live Stream Concluded'}</Text>
+      <Text style={styles.title}>{cleanStreamTitle(stream?.title) || 'Live Stream Concluded'}</Text>
       <Text style={styles.subtitle}>
         Broadcast telemetry and automated AI event highlight summary
       </Text>
@@ -198,6 +206,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  categoryBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  categoryBadgeText: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '700',
   },
   statusPill: {
     backgroundColor: 'rgba(100, 116, 139, 0.2)',

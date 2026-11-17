@@ -13,6 +13,11 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { ViewerBadge } from '../../../components/ViewerBadge';
+import {
+  FILTER_CATEGORIES,
+  getStreamCategory,
+  cleanStreamTitle,
+} from '../../../lib/categories';
 
 interface StreamItem {
   id: string;
@@ -23,15 +28,6 @@ interface StreamItem {
     display_name: string;
   } | null;
 }
-
-const CATEGORIES = [
-  { id: 'all', label: '🔥 All Streams' },
-  { id: 'tech', label: '💻 Tech & Dev' },
-  { id: 'gaming', label: '🎮 Gaming' },
-  { id: 'chat', label: '💬 Just Chatting' },
-  { id: 'music', label: '🎵 Music' },
-  { id: 'creative', label: '🎨 Design' },
-];
 
 export default function LiveStreamsScreen() {
   const router = useRouter();
@@ -66,6 +62,15 @@ export default function LiveStreamsScreen() {
     return mins === 0 ? 'Just started' : `${mins}m ago`;
   };
 
+  // Filter streams strictly by selected category
+  const filteredStreams = streams.filter((stream) => {
+    if (selectedCategory === 'all') return true;
+    const cat = getStreamCategory(stream.title);
+    return cat?.id === selectedCategory;
+  });
+
+  const activeCategoryObj = FILTER_CATEGORIES.find((c) => c.id === selectedCategory);
+
   // Deterministic mock preview visual accent for streams
   const getGradientColor = (id: string) => {
     const colors = [
@@ -95,7 +100,9 @@ export default function LiveStreamsScreen() {
 
         <View style={styles.activePill}>
           <View style={styles.activeDot} />
-          <Text style={styles.activeText}>{streams.length} LIVE NOW</Text>
+          <Text style={styles.activeText}>
+            {filteredStreams.length} {selectedCategory === 'all' ? 'LIVE NOW' : 'ONLINE'}
+          </Text>
         </View>
       </View>
 
@@ -106,7 +113,7 @@ export default function LiveStreamsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
         >
-          {CATEGORIES.map((cat) => {
+          {FILTER_CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
               <TouchableOpacity
@@ -126,96 +133,117 @@ export default function LiveStreamsScreen() {
 
       {/* Streams Feed */}
       <FlatList
-        data={streams}
+        data={filteredStreams}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#818CF8" />
         }
-        contentContainerStyle={streams.length === 0 ? styles.emptyList : styles.list}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.88}
-            onPress={() => router.push(`/(app)/watch/${item.id}`)}
-          >
-            {/* 16:9 Thumbnail Stage */}
-            <View
-              style={[
-                styles.previewContainer,
-                { background: getGradientColor(item.id) } as any,
-              ]}
+        contentContainerStyle={filteredStreams.length === 0 ? styles.emptyList : styles.list}
+        renderItem={({ item }) => {
+          const cat = getStreamCategory(item.title);
+          const cleanTitle = cleanStreamTitle(item.title);
+
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.88}
+              onPress={() => router.push(`/(app)/watch/${item.id}`)}
             >
-              {/* Background ambient pattern */}
-              <View style={styles.previewAmbient}>
-                <Text style={styles.previewPatternIcon}>📡</Text>
-              </View>
-
-              {/* Floating Top Badges */}
-              <View style={styles.previewTopRow}>
-                <View style={styles.liveBadge}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveBadgeText}>LIVE</Text>
+              {/* 16:9 Thumbnail Stage */}
+              <View
+                style={[
+                  styles.previewContainer,
+                  { background: getGradientColor(item.id) } as any,
+                ]}
+              >
+                {/* Background ambient pattern */}
+                <View style={styles.previewAmbient}>
+                  <Text style={styles.previewPatternIcon}>{cat?.icon || '📡'}</Text>
                 </View>
 
-                <ViewerBadge count={item.current_viewers} size="sm" />
-              </View>
-
-              {/* Bottom tag over preview */}
-              <View style={styles.previewBottomRow}>
-                <View style={styles.tagPill}>
-                  <Text style={styles.tagText}>⚡ ULTRA LOW LATENCY</Text>
-                </View>
-                <Text style={styles.durationPill}>⏱ {getDuration(item.started_at)}</Text>
-              </View>
-            </View>
-
-            {/* Stream Info Row */}
-            <View style={styles.cardBody}>
-              {/* Creator Avatar with Gradient Border */}
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarInner}>
-                  <Text style={styles.avatarLetter}>
-                    {(item.creator?.display_name || 'U').charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.cardDetails}>
-                <Text style={styles.streamTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-
-                <View style={styles.creatorRow}>
-                  <Text style={styles.creatorName} numberOfLines={1}>
-                    {item.creator?.display_name || 'Creator'}
-                  </Text>
-                  <View style={styles.verifiedCheck}>
-                    <Text style={styles.checkText}>✓</Text>
+                {/* Floating Top Badges */}
+                <View style={styles.previewTopRow}>
+                  <View style={styles.liveBadge}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveBadgeText}>LIVE</Text>
                   </View>
-                  <Text style={styles.metaDot}>•</Text>
-                  <Text style={styles.categorySub}>Broadcasting</Text>
+
+                  <ViewerBadge count={item.current_viewers} size="sm" />
+                </View>
+
+                {/* Bottom tag over preview */}
+                <View style={styles.previewBottomRow}>
+                  <View style={styles.tagPill}>
+                    <Text style={styles.tagText}>
+                      {cat ? `${cat.icon} ${cat.badge.toUpperCase()}` : '⚡ LIVE STREAM'}
+                    </Text>
+                  </View>
+                  <Text style={styles.durationPill}>⏱ {getDuration(item.started_at)}</Text>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        )}
+
+              {/* Stream Info Row */}
+              <View style={styles.cardBody}>
+                {/* Creator Avatar with Gradient Border */}
+                <View style={styles.avatarRing}>
+                  <View style={styles.avatarInner}>
+                    <Text style={styles.avatarLetter}>
+                      {(item.creator?.display_name || 'U').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.cardDetails}>
+                  <Text style={styles.streamTitle} numberOfLines={1}>
+                    {cleanTitle}
+                  </Text>
+
+                  <View style={styles.creatorRow}>
+                    <Text style={styles.creatorName} numberOfLines={1}>
+                      {item.creator?.display_name || 'Creator'}
+                    </Text>
+                    <View style={styles.verifiedCheck}>
+                      <Text style={styles.checkText}>✓</Text>
+                    </View>
+                    <Text style={styles.metaDot}>•</Text>
+                    <Text style={styles.categorySub}>{cat?.badge || 'Broadcast'}</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconCircle}>
-                <Text style={styles.emptyIcon}>📡</Text>
+                <Text style={styles.emptyIcon}>{activeCategoryObj?.icon || '📡'}</Text>
               </View>
-              <Text style={styles.emptyTitle}>No Live Broadcasts Right Now</Text>
+              <Text style={styles.emptyTitle}>
+                {selectedCategory === 'all'
+                  ? 'No Live Broadcasts Right Now'
+                  : `No ${activeCategoryObj?.label.replace(/^[^\w\s]+\s*/, '')} Streams Online`}
+              </Text>
               <Text style={styles.emptySubtitle}>
-                Be the creator everyone tunes in to watch. Start your high-definition live stream
-                with instant chat and presence!
+                {selectedCategory === 'all'
+                  ? 'Be the creator everyone tunes in to watch. Start your high-definition live stream with instant chat and presence!'
+                  : `No creators are currently streaming in this category. Be the first to start a ${activeCategoryObj?.label} stream!`}
               </Text>
               <TouchableOpacity
                 style={styles.emptyActionButton}
-                onPress={() => router.push('/(app)/(tabs)/go-live')}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/(tabs)/go-live',
+                    params: selectedCategory !== 'all' ? { category: selectedCategory } : {},
+                  })
+                }
                 activeOpacity={0.8}
               >
-                <Text style={styles.emptyActionText}>🔴 Start Broadcasting Now</Text>
+                <Text style={styles.emptyActionText}>
+                  {selectedCategory === 'all'
+                    ? '🔴 Start Broadcasting Now'
+                    : `🔴 Go Live in ${activeCategoryObj?.label}`}
+                </Text>
               </TouchableOpacity>
             </View>
           ) : undefined
@@ -426,7 +454,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     color: '#818CF8',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
@@ -504,13 +532,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   categorySub: {
-    color: '#64748B',
+    color: '#818CF8',
     fontSize: 12,
+    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',
     padding: 36,
-    maxWidth: 420,
+    maxWidth: 440,
   },
   emptyIconCircle: {
     width: 90,

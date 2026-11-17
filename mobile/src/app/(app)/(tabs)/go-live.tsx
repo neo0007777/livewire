@@ -10,21 +10,16 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { startStream } from '../../../lib/streams';
-
-const STREAM_CATEGORIES = [
-  '💻 Tech & Coding',
-  '🎮 Gaming',
-  '💬 Just Chatting',
-  '🎵 Music & Audio',
-  '🎨 Creative & Design',
-];
+import { STREAM_CATEGORIES, StreamCategory } from '../../../lib/categories';
 
 export default function GoLiveScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ category?: string }>();
+  const initialCat = STREAM_CATEGORIES.find((c) => c.id === params.category) || STREAM_CATEGORIES[0];
   const [title, setTitle] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(STREAM_CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState<StreamCategory>(initialCat);
   const [loading, setLoading] = useState(false);
 
   const handleStartBroadcast = async () => {
@@ -35,8 +30,9 @@ export default function GoLiveScreen() {
 
     setLoading(true);
     try {
-      const fullTitle = `[${selectedCategory.split(' ')[1] || 'Live'}] ${title.trim()}`;
-      const stream = await startStream(fullTitle);
+      // Build title with clear category tag e.g. "[Gaming] Playing Minecraft"
+      const formattedTitle = `${selectedCategory.tag} ${title.trim()}`.slice(0, 80);
+      const stream = await startStream(formattedTitle);
       setTitle('');
       router.push(`/(app)/broadcast/${stream.id}`);
     } catch (err: any) {
@@ -107,16 +103,16 @@ export default function GoLiveScreen() {
         <Text style={styles.inputLabel}>CATEGORY & TAGS</Text>
         <View style={styles.categoryPillsRow}>
           {STREAM_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat;
+            const isSelected = selectedCategory.id === cat.id;
             return (
               <TouchableOpacity
-                key={cat}
+                key={cat.id}
                 style={[styles.categoryPill, isSelected && styles.categoryPillSelected]}
                 onPress={() => setSelectedCategory(cat)}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
-                  {cat}
+                  {cat.label}
                 </Text>
               </TouchableOpacity>
             );

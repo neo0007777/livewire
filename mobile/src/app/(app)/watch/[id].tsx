@@ -19,6 +19,7 @@ import { useStreamChannel } from '../../../hooks/useStreamChannel';
 import { useChat } from '../../../hooks/useChat';
 import { usePresenceCount } from '../../../hooks/usePresenceCount';
 import { supabase } from '../../../lib/supabase';
+import { getStreamCategory, cleanStreamTitle } from '../../../lib/categories';
 
 export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -208,7 +209,7 @@ export default function WatchScreen() {
 
               <View style={styles.metaContainer}>
                 <Text style={styles.streamTitle} numberOfLines={1}>
-                  {streamInfo?.title || 'Live Broadcast'}
+                  {cleanStreamTitle(streamInfo?.title) || 'Live Broadcast'}
                 </Text>
                 <View style={styles.creatorSubRow}>
                   <Text style={styles.creatorName} numberOfLines={1}>
@@ -217,6 +218,11 @@ export default function WatchScreen() {
                   <View style={styles.verifiedDot}>
                     <Text style={styles.verifiedDotText}>✓</Text>
                   </View>
+                  {getStreamCategory(streamInfo?.title) && (
+                    <Text style={styles.categoryPillHeader}>
+                      {getStreamCategory(streamInfo?.title)?.icon} {getStreamCategory(streamInfo?.title)?.badge}
+                    </Text>
+                  )}
                 </View>
               </View>
 
@@ -367,6 +373,16 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 11,
     fontWeight: '600',
+  },
+  categoryPillHeader: {
+    color: '#818CF8',
+    fontSize: 10,
+    fontWeight: '700',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    marginLeft: 4,
   },
   verifiedDot: {
     backgroundColor: '#3B82F6',
