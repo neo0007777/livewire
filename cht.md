@@ -455,3 +455,15 @@
   3. **Open Relay TURN & STUN Topology:** Integrated Metered OpenRelay TURN endpoints across UDP, TCP, and TLS ports alongside Google and Cloudflare STUN servers, ensuring guaranteed relay traversal across carrier cellular firewalls.
   4. **Immutable Native MediaStream Reconstruction & Speaker Routing:** Updated `RemoteStage.native.tsx` to instantiate a fresh `MediaStream` on every track arrival with `t.enabled = true`, ensuring immediate audio engine attachment and automatic speakerphone routing via `AudioSession.selectAudioOutput('speaker')`.
 - Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,007 bundled modules.
+
+### Turn 31: Secure HTTPS Ingress Architecture for Mobile Browser MediaDevice Validation
+**User:**
+> "If you're developing locally, expose your application through an HTTPS tunnel... do all these changes so i do it as my camera in phone is not working"
+
+**Action Taken:**
+- Diagnosed root cause for camera failure when loading mobile web development feeds:
+  1. **W3C Secure Context Specification Compliance:** Modern mobile browsers (iOS Safari, Android Chrome) strictly enforce `Window.isSecureContext === true` for `MediaDevices.getUserMedia()`. Accessing local IP addresses over unencrypted HTTP (`http://<ip>:8081`) triggers immediate permission rejection, leaving `navigator.mediaDevices` undefined or inaccessible.
+- Architectural Solutions Applied:
+  1. **Secure Edge Ingress Tunneling:** Deployed an encrypted edge tunnel terminating TLS at the edge with HTTP/2 transport over port 443, forwarding directly to the Expo application server.
+  2. **Device Permission Onboarding:** Verified iOS Safari and mobile Chrome media acquisition policies (`playsInline`, `autoPlay`, and `muted` constraints) to ensure automatic hardware camera feed acquisition upon user permission grant.
+- Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
