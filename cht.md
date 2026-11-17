@@ -497,3 +497,12 @@
   1. **Web Environment Validation:** The successful end-to-end broadcast between laptop and mobile browser via the encrypted tunnel validates the core architecture: Supabase Realtime signaling, WebRTC SDP offer/answer handshakes, OpenRelay TURN NAT traversal, and live chat/presence synchronizations are operating correctly.
   2. **Installed APK Version Discrepancy:** Identified that the physical phones are currently executing Build #8 (or earlier), which still embodies the native C++ `_reactTag` decoupling bug and uninitialized `AudioSession` hardware microphone routing.
   3. **Cloud Build Pipeline State:** Inspected Build #9 (`09688fe0-aea4-4dda-9f47-90e206bce03a`) on EAS Cloud. The job is queued in the EAS Free Tier queue awaiting builder allocation. The native stream tag and audio fixes committed in `fb790e4` will become active once Build #9 compiles into the updated APK.
+
+### Turn 34: EAS Build #9 Completion & Native Android Release Packaging
+**User:**
+> "now"
+
+**Action Taken:**
+- Verified completion of EAS Cloud Build #9 (`09688fe0-aea4-4dda-9f47-90e206bce03a`): status transitioned to `FINISHED` (exit code 0).
+- Extracted and verified production universal APK artifact: `https://expo.dev/artifacts/eas/j83x5g3tavK9wTmsrrwD-2N5KJZiO5MdWG6A-dpblpE.apk`.
+- Updated submission documentation (`README.md`, `BUILD_LOG.md`) to index the verified Build #9 release.
