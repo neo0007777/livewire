@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { startStream } from '../../../lib/streams';
 import { STREAM_CATEGORIES, StreamCategory } from '../../../lib/categories';
 import {
@@ -25,6 +26,7 @@ import { supabase } from '../../../lib/supabase';
 
 export default function GoLiveScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ category?: string }>();
   const initialCat = STREAM_CATEGORIES.find((c) => c.id === params.category) || STREAM_CATEGORIES[0];
   const [title, setTitle] = useState('');
@@ -82,7 +84,14 @@ export default function GoLiveScreen() {
   const targetName = isShiva ? 'cdsc' : 'shiva';
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.contentContainer,
+        { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24) },
+      ]}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* Studio Header */}
       <View style={styles.headerRow}>
         <View style={styles.studioBadge}>

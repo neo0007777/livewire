@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { BroadcastIcon } from '../../components/Icons';
 
@@ -8,6 +9,7 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -31,7 +33,17 @@ export default function SignInScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.scrollContent,
+        {
+          paddingTop: Math.max(insets.top + 20, 40),
+          paddingBottom: Math.max(insets.bottom + 20, 40),
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.card}>
         {/* Brand Header */}
         <View style={styles.brandRow}>
@@ -114,17 +126,20 @@ export default function SignInScreen() {
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#070913',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#070913',
+    padding: 20,
   },
   card: {
     backgroundColor: '#0E1322',

@@ -1,10 +1,15 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInbox } from '../../../hooks/useInbox';
 import { MonitorIcon, BroadcastIcon, BellIcon, UserIcon } from '../../../components/Icons';
 
 export default function TabLayout() {
   const { unreadCount } = useInbox();
+  const insets = useSafeAreaInsets();
+
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 24 : 8);
+  const barHeight = 58 + bottomInset;
 
   return (
     <Tabs
@@ -14,8 +19,8 @@ export default function TabLayout() {
           backgroundColor: '#0A0D18',
           borderTopColor: 'rgba(255, 255, 255, 0.07)',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 66,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          height: barHeight,
+          paddingBottom: bottomInset,
           paddingTop: 8,
           elevation: 20,
           shadowColor: '#000',

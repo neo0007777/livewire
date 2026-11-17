@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { ViewerBadge } from '../../../components/ViewerBadge';
@@ -33,6 +34,7 @@ interface StreamItem {
 
 export default function LiveStreamsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session, profile } = useSessionStore();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -109,7 +111,7 @@ export default function LiveStreamsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 16) }]}>
       {/* Top Branding Bar */}
       <View style={styles.topHeader}>
         <View style={styles.brandRow}>

@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { useSessionStore } from '../../../stores/session';
 import { CheckIcon, UserIcon } from '../../../components/Icons';
@@ -20,6 +21,7 @@ interface UserProfileItem {
 }
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { profile, session, signOut } = useSessionStore();
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -128,7 +130,13 @@ export default function ProfileScreen() {
   const currentList = activeTab === 'followers' ? followers : following;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.contentContainer,
+        { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24) },
+      ]}
+    >
       <Text style={styles.header}>Creator Profile</Text>
 
       {/* Profile Identity Card */}

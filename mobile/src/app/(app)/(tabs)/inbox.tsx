@@ -1,10 +1,12 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInbox, AppNotification } from '../../../hooks/useInbox';
 import { BroadcastIcon, UserIcon, EyeIcon, MonitorIcon, BellIcon } from '../../../components/Icons';
 
 export default function InboxScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { notifications, loading, refresh, markAsRead } = useInbox();
 
   const handleNotificationPress = async (item: AppNotification) => {
@@ -64,7 +66,12 @@ export default function InboxScreen() {
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24) },
+      ]}
+    >
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.header}>Activity</Text>

@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LiveKitWrapper } from '../../../components/LiveKitWrapper';
 import { LocalPreview } from '../../../components/LocalPreview';
 import { ViewerBadge } from '../../../components/ViewerBadge';
@@ -32,6 +33,7 @@ export default function BroadcastScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const streamId = Array.isArray(id) ? id[0] : (id || '');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session } = useSessionStore();
   const [tokenData, setTokenData] = useState<LiveKitTokenResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -212,7 +214,7 @@ export default function BroadcastScreen() {
             />
 
             {/* Top Control Bar with Status & Controls */}
-            <View style={styles.topBar}>
+            <View style={[styles.topBar, { top: Math.max(insets.top + 6, Platform.OS === 'ios' ? 52 : 28) }]}>
               {/* Row 1: Live Status, Viewers, Quality, End Stream */}
               <View style={styles.headerRow1}>
                 <View style={styles.badgeRow}>
@@ -341,7 +343,7 @@ export default function BroadcastScreen() {
             </View>
 
             {/* Chat Overlay */}
-            <View style={styles.chatOverlay}>
+            <View style={[styles.chatOverlay, { paddingBottom: insets.bottom }]}>
               <ChatPanel
                 messages={messages}
                 onSend={send}

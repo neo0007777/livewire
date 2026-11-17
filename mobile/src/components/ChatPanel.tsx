@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatMessage } from '../hooks/useChat';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
@@ -41,6 +42,7 @@ export function ChatPanel({
   isDraining = false,
   onManualSync,
 }: ChatPanelProps) {
+  const insets = useSafeAreaInsets();
   const { session, profile } = useSessionStore();
   const [input, setInput] = useState('');
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
@@ -216,7 +218,12 @@ export function ChatPanel({
       )}
 
       {/* Input Bar */}
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          { paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 10) },
+        ]}
+      >
         <TextInput
           style={styles.input}
           placeholder={
@@ -249,6 +256,8 @@ export function ChatPanel({
 const styles = StyleSheet.create({
   container: {
     height: 310,
+    maxHeight: '52%',
+    minHeight: 220,
     width: '100%',
     justifyContent: 'flex-end',
   },

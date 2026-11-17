@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { cleanStreamTitle, getStreamCategory } from '../../../lib/categories';
 import { EyeIcon, UserIcon, BroadcastIcon, MonitorIcon } from '../../../components/Icons';
@@ -33,6 +34,7 @@ export default function StreamSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const streamId = Array.isArray(id) ? id[0] : (id || '');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [stream, setStream] = useState<any>(null);
   const [highlights, setHighlights] = useState<any>(null);
 
@@ -120,7 +122,16 @@ export default function StreamSummaryScreen() {
     : 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.contentContainer,
+        {
+          paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24),
+          paddingBottom: Math.max(insets.bottom + 24, 40),
+        },
+      ]}
+    >
       <View style={styles.badgeRow}>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>POST-EVENT ANALYTICS</Text>

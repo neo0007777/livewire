@@ -96,3 +96,4 @@ export async function toggleFollowUser(
     return { isFollowing: true };
   }
 }
+

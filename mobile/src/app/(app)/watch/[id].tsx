@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LiveKitWrapper } from '../../../components/LiveKitWrapper';
 import { RemoteStage } from '../../../components/RemoteStage';
 import { ViewerBadge } from '../../../components/ViewerBadge';
@@ -27,6 +28,7 @@ export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const streamId = Array.isArray(id) ? id[0] : (id || '');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session, profile } = useSessionStore();
   const [tokenData, setTokenData] = useState<LiveKitTokenResponse | null>(null);
   const [streamInfo, setStreamInfo] = useState<any>(null);
@@ -181,7 +183,7 @@ export default function WatchScreen() {
             <RemoteStage channel={channel} streamId={streamId} />
 
             {/* Top Bar with Stream Info & Controls */}
-            <View style={styles.topBar}>
+            <View style={[styles.topBar, { top: Math.max(insets.top + 6, Platform.OS === 'ios' ? 52 : 32) }]}>
               <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
                 <CloseIcon size={14} color="#FFF" />
               </TouchableOpacity>
@@ -261,7 +263,7 @@ export default function WatchScreen() {
             )}
 
             {/* Chat Overlay */}
-            <View style={styles.chatOverlay}>
+            <View style={[styles.chatOverlay, { paddingBottom: insets.bottom }]}>
               <ChatPanel
                 messages={messages}
                 onSend={send}
