@@ -52,6 +52,22 @@ export function LocalPreview({
   const peerCreationTimeRef = useRef<Map<string, number>>(new Map());
   const currentFacingRef = useRef<'user' | 'environment'>(facingMode);
 
+  // Start native AudioSession on host to initialize Android AudioManager and hardware microphone
+  useEffect(() => {
+    try {
+      const { AudioSession } = require('@livekit/react-native');
+      AudioSession.startAudioSession().catch((err: any) => {
+        console.warn('[LocalPreview.native] AudioSession start error on host:', err);
+      });
+
+      return () => {
+        try {
+          AudioSession.stopAudioSession().catch(() => {});
+        } catch (e) {}
+      };
+    } catch (e) {}
+  }, []);
+
   // Initialize native Camera & Microphone directly via WebRTC mediaDevices
   const initHardwareCamera = useCallback(async (facing: 'user' | 'environment') => {
     setIsInitializing(true);
@@ -97,6 +113,19 @@ export function LocalPreview({
 
       if (!stream || stream.getVideoTracks().length === 0) {
         throw new Error('Device camera hardware is unavailable');
+      }
+
+      // If audio track is missing from camera stream, acquire microphone explicitly
+      if (stream.getAudioTracks().length === 0) {
+        try {
+          const audioStream = (await mediaDevices.getUserMedia({ audio: true })) as MediaStream;
+          const audioTrack = audioStream.getAudioTracks()[0];
+          if (audioTrack) {
+            stream.addTrack(audioTrack);
+          }
+        } catch (e) {
+          console.warn('[LocalPreview.native] Secondary audio capture error:', e);
+        }
       }
 
       // Apply initial mute states
@@ -259,9 +288,10 @@ export function LocalPreview({
       if (payload?.targetId === 'creator' && payload?.candidate) {
         const viewerId = payload?.fromId;
         const pc = peersRef.current.get(viewerId);
-        if (pc) {
+        const candObj = payload.candidate;
+        if (pc && (candObj.sdpMid != null || candObj.sdpMLineIndex != null)) {
           try {
-            const candidate = new RTCIceCandidate(payload.candidate);
+            const candidate = new RTCIceCandidate(candObj);
             if (pc.remoteDescription) {
               await pc.addIceCandidate(candidate);
             } else {

@@ -467,3 +467,22 @@
   1. **Secure Edge Ingress Tunneling:** Deployed an encrypted edge tunnel terminating TLS at the edge with HTTP/2 transport over port 443, forwarding directly to the Expo application server.
   2. **Device Permission Onboarding:** Verified iOS Safari and mobile Chrome media acquisition policies (`playsInline`, `autoPlay`, and `muted` constraints) to ensure automatic hardware camera feed acquisition upon user permission grant.
 - Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
+
+### Turn 32: Native Remote MediaStream Binding Restoration & Host Hardware Audio Routing
+**User:**
+> "check the ananya repo the apk is not working fine in phone as its working good in web but not in app as i can see my vedio from the host but not from other phone and also mic is not working see why its happening over website its good but apk is not"
+
+**Action Taken:**
+- Conducted deep forensic comparison between the web execution environment and native Android runtime, alongside reference architecture analysis (`ANANYA542/LiveCast`):
+  1. In `ANANYA542/LiveCast`, video and audio streaming relies on hosted LiveKit Cloud SFU tokens where native `VideoView` components bind directly to `Track` objects managed by the LiveKit client engine.
+  2. In the LiveWire zero-config P2P pipeline, web browsers succeed because standard DOM `<video>` elements directly consume WebRTC `MediaStream` objects.
+- Diagnosed root causes for native Android APK stream failure and missing audio:
+  1. **Native Stream Tag Disconnection in Viewer:** In `RemoteStage.native.tsx`, attempting to recreate a stream using `new MediaStream(allTracks)` instantiated a local stream in JavaScript with a random UUID, decoupling it from the native C++ WebRTC video sink created during SDP negotiation. When passed to `<RTCView streamURL={p2pStream.toURL()} />`, Android's native `RTCVideoView` searched for video frames using the arbitrary UUID, rendering a completely black surface.
+  2. **Host Microphone Session Uninitialized:** In `LocalPreview.native.tsx`, `AudioSession.startAudioSession()` was missing. On Android, the audio record HAL requires `inCommunication` mode to route hardware microphone samples into the WebRTC pipeline; without it, digital silence was transmitted.
+  3. **Secondary Audio Capture Fallback:** On select Android devices, combined video/audio constraints can fail to bind microphone tracks; explicit secondary audio acquisition was needed to guarantee microphone track attachment.
+  4. **ICE Candidate Null Property Guard:** Added defensive guards against null `sdpMid` and `sdpMLineIndex` properties during candidate deserialization.
+- Architectural Solutions Applied:
+  1. **Native Remote Stream Tag Preservation:** Refactored `pc.ontrack` in `RemoteStage.native.tsx` to bind the original native `event.streams[0]` directly to state, ensuring `p2pStream.toURL()` provides the valid native `streamReactTag` registered in the WebRTC C++ engine.
+  2. **Host AudioSession Initialization:** Added `AudioSession.startAudioSession()` to `LocalPreview.native.tsx` to properly configure Android's `AudioManager` for live microphone capture.
+  3. **Explicit Secondary Microphone Fallback:** Added explicit `{ audio: true }` capture fallback in `LocalPreview.native.tsx` if the combined camera stream lacks an audio track.
+- Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,007 bundled modules.

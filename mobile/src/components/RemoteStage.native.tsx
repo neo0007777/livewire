@@ -75,7 +75,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     pcRef.current = pc;
     pendingIceRef.current = [];
 
-    // Track arrival: reconstruct MediaStream with all tracks to guarantee React re-render & audio playback
+    // Track arrival: directly bind the native remote MediaStream!
     pc.ontrack = (event: any) => {
       if (!isMounted) return;
       isP2pConnectedRef.current = true;
@@ -83,20 +83,20 @@ export function RemoteStage({ channel }: RemoteStageProps) {
 
       const stream = event.streams && event.streams[0];
       if (stream) {
-        const allTracks = stream.getTracks();
-        allTracks.forEach((t: any) => {
+        stream.getTracks().forEach((t: any) => {
           t.enabled = true;
         });
-        setP2pStream(new MediaStream(allTracks));
+        setP2pStream(stream);
       } else if (event.track) {
         event.track.enabled = true;
-        setP2pStream((prev) => {
-          if (prev) {
-            const remaining = prev.getTracks().filter((t: any) => t.id !== event.track.id);
-            return new MediaStream([...remaining, event.track]);
-          }
-          return new MediaStream([event.track]);
-        });
+        const remoteStreams = (pc as any)._remoteStreams;
+        if (remoteStreams && remoteStreams.size > 0) {
+          const firstStream = Array.from(remoteStreams.values())[0] as MediaStream;
+          firstStream.getTracks().forEach((t: any) => {
+            t.enabled = true;
+          });
+          setP2pStream(firstStream);
+        }
       }
     };
 
@@ -157,15 +157,18 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     // Handle incoming ICE candidate from creator
     const handleIce = async ({ payload }: any) => {
       if (payload?.targetId === viewerId && payload?.candidate) {
-        try {
-          const candidate = new RTCIceCandidate(payload.candidate);
-          if (pc.remoteDescription) {
-            await pc.addIceCandidate(candidate);
-          } else {
-            pendingIceRef.current.push(candidate);
+        const candObj = payload.candidate;
+        if (candObj && (candObj.sdpMid != null || candObj.sdpMLineIndex != null)) {
+          try {
+            const candidate = new RTCIceCandidate(candObj);
+            if (pc.remoteDescription) {
+              await pc.addIceCandidate(candidate);
+            } else {
+              pendingIceRef.current.push(candidate);
+            }
+          } catch (err) {
+            console.warn('[RemoteStage.native] Error adding ICE candidate:', err);
           }
-        } catch (err) {
-          console.warn('[RemoteStage.native] Error adding ICE candidate:', err);
         }
       }
     };
