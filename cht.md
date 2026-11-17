@@ -280,3 +280,13 @@
   - Made live chat panel responsive (`ChatPanel.tsx`) with a dynamic height cap (`maxHeight: '52%'`), ensuring the video feed remains visible even on compact phone screens.
   - Wrapped authentication cards (`sign-in.tsx`, `sign-up.tsx`) in scroll containers with keyboard dismiss handling to prevent keyboard clipping on small mobile viewports.
   - Verified bundle compilation across 1,755 modules with 0 errors.
+
+### Turn 20: Tab Bar Label & Icon Alignment Normalization
+**User:**
+> "fix this as its overlapping" (Screenshot showing Go Live button overlapping with tab text label)
+
+**Action Taken:**
+- Resolved bottom navigation label and icon overlap in `(tabs)/_layout.tsx`:
+  - Enforced `tabBarLabelPosition: 'below-icon'` across `screenOptions` to prevent React Navigation from shifting labels beside icons on broad viewports.
+  - Symmetrized `goLiveBtn` container to 30x30px circle to fit standard tab icon bounding boxes.
+  - Standardized string-based `tabBarLabel: 'Go Live'` with dedicated active red tinting (`#EF4444`) and focus indicator dot (`activeDotRed`), matching the visual hierarchy of the other tabs.
