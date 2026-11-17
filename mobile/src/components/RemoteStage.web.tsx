@@ -31,10 +31,22 @@ export function RemoteStage({ channel }: RemoteStageProps) {
   // Bind remote stream to video element
   useEffect(() => {
     if (videoRef.current && remoteStream) {
+      videoRef.current.defaultMuted = isMuted;
+      videoRef.current.muted = isMuted;
       videoRef.current.srcObject = remoteStream;
-      videoRef.current.play().catch(() => {});
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err: any) => {
+          console.warn('[RemoteStage.web] video.play() error:', err);
+          if (videoRef.current && !videoRef.current.muted) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().catch(() => {});
+          }
+        });
+      }
     }
-  }, [remoteStream]);
+  }, [remoteStream, isMuted]);
 
   useEffect(() => {
     if (!channel) return;
@@ -61,17 +73,41 @@ export function RemoteStage({ channel }: RemoteStageProps) {
         setRemoteStream(stream);
         isConnectedRef.current = true;
         setIsConnected(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.defaultMuted = isMuted;
+          videoRef.current.muted = isMuted;
+          videoRef.current.play().catch(() => {});
+        }
       } else if (event.track) {
         setRemoteStream((prev) => {
+          let nextStream: MediaStream;
           if (prev) {
             const exists = prev.getTracks().find((t: any) => t.id === event.track.id);
             if (!exists) {
-              prev.addTrack(event.track);
+              nextStream = new MediaStream([...prev.getTracks(), event.track]);
+            } else {
+              nextStream = prev;
             }
-            return prev;
+          } else {
+            nextStream = new MediaStream([event.track]);
           }
-          return new MediaStream([event.track]);
+          if (videoRef.current) {
+            videoRef.current.srcObject = nextStream;
+            videoRef.current.defaultMuted = isMuted;
+            videoRef.current.muted = isMuted;
+            videoRef.current.play().catch(() => {});
+          }
+          return nextStream;
         });
+        isConnectedRef.current = true;
+        setIsConnected(true);
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (!isMounted) return;
+      if (pc.connectionState === 'connected') {
         isConnectedRef.current = true;
         setIsConnected(true);
       }
@@ -157,7 +193,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     };
 
     requestStream();
-    const interval = setInterval(requestStream, 1500);
+    const interval = setInterval(requestStream, 3000);
 
     return () => {
       isMounted = false;
@@ -177,6 +213,11 @@ export function RemoteStage({ channel }: RemoteStageProps) {
         autoPlay
         playsInline
         muted={isMuted}
+        onLoadedMetadata={() => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+          }
+        }}
         style={{
           width: '100%',
           height: '100%',
@@ -222,6 +263,13 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           <Text style={styles.loadingTitle}>Connecting to live broadcast...</Text>
           <Text style={styles.loadingSubtitle}>Establishing live video stream with creator</Text>
         </View>
+      )}
+
+      {/* Autoplay un-mute prompt banner if muted */}
+      {isConnected && isMuted && (
+        <TouchableOpacity style={styles.unmuteBanner} onPress={toggleMute} activeOpacity={0.85}>
+          <Text style={styles.unmuteBannerText}>🔊 Browser audio is muted — Click here to Unmute</Text>
+        </TouchableOpacity>
       )}
 
       {/* Floating Audio Toggle for Viewer */}
@@ -353,5 +401,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  unmuteBanner: {
+    position: 'absolute',
+    top: 96,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.92)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+  },
+  unmuteBannerText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
