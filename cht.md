@@ -256,3 +256,14 @@
   - Enhanced real-time chat lifecycle (`useChat.ts`) to automatically route outbound messages to persistent storage when offline or on network error, with automatic FIFO queue draining and backoff handling upon network recovery.
   - Created vector-based `OfflineBanner` component and visual status badges (`ClockIcon`, `WifiOffIcon`, `SyncIcon`) inside `ChatPanel` across viewer (`watch/[id].tsx`) and creator (`broadcast/[id].tsx`) interfaces.
   - Verified end-to-end bundling and type consistency across 1,751 modules.
+
+### Turn 18: Profile Community Connections & Universal Follow/Unfollow Toggle
+**User:**
+> "also one more thing if i follow someone if i click on it again it should start unfollow"
+
+**Action Taken:**
+- Centralized relationship mutations into dedicated `toggleFollowUser` module (`mobile/src/lib/follows.ts`):
+  - Implemented bidirectional follow/unfollow lifecycle: checks existing `follows` record, deletes row on unfollow, and upserts with activity notification on follow.
+  - Upgraded Profile screen (`profile.tsx`) to render dedicated "Community Connections" card with Followers and Following tabs, showing member avatars, names, and live 1-tap `Unfollow` / `+ Follow` buttons.
+  - Synchronized `watch/[id].tsx` and `ChatPanel.tsx` to ensure tapping `Following` instantly toggles back to `+ Follow`.
+  - Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
