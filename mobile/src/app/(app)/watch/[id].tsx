@@ -36,8 +36,12 @@ export default function WatchScreen() {
   // Chat hook
   const {
     messages,
+    isOnline,
+    queueCount,
+    isDraining,
     send,
     retry,
+    drainQueue,
     handleIncomingMessage,
     handleStreamUpdate,
     fillGaps,
@@ -294,6 +298,10 @@ export default function WatchScreen() {
                 onSend={send}
                 onRetry={retry}
                 isEnded={isEnded}
+                isOnline={isOnline}
+                queueCount={queueCount}
+                isDraining={isDraining}
+                onManualSync={drainQueue}
               />
             </View>
           </View>

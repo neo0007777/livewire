@@ -46,8 +46,12 @@ export default function BroadcastScreen() {
   // Chat hook
   const {
     messages,
+    isOnline,
+    queueCount,
+    isDraining,
     send,
     retry,
+    drainQueue,
     handleIncomingMessage,
     handleStreamUpdate,
     fillGaps,
@@ -338,7 +342,15 @@ export default function BroadcastScreen() {
 
             {/* Chat Overlay */}
             <View style={styles.chatOverlay}>
-              <ChatPanel messages={messages} onSend={send} onRetry={retry} />
+              <ChatPanel
+                messages={messages}
+                onSend={send}
+                onRetry={retry}
+                isOnline={isOnline}
+                queueCount={queueCount}
+                isDraining={isDraining}
+                onManualSync={drainQueue}
+              />
             </View>
           </View>
         </LiveKitWrapper>

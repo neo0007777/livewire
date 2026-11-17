@@ -366,3 +366,122 @@ export function CheckIcon({ size = 14, color = '#22C55E' }: IconProps) {
     </View>
   );
 }
+
+// Minimalist Wifi Off / Offline Icon
+export function WifiOffIcon({ size = 16, color = '#F59E0B' }: IconProps) {
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+      <View
+        style={{
+          width: size * 0.82,
+          height: size * 0.45,
+          borderTopLeftRadius: size * 0.45,
+          borderTopRightRadius: size * 0.45,
+          borderWidth: 1.5,
+          borderBottomWidth: 0,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          width: size * 0.46,
+          height: size * 0.25,
+          borderTopLeftRadius: size * 0.25,
+          borderTopRightRadius: size * 0.25,
+          borderWidth: 1.5,
+          borderBottomWidth: 0,
+          borderColor: color,
+          marginTop: 1,
+        }}
+      />
+      <View
+        style={{
+          width: size * 0.2,
+          height: size * 0.2,
+          borderRadius: size * 0.1,
+          backgroundColor: color,
+          marginTop: 1,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          width: size * 1.15,
+          height: 1.6,
+          backgroundColor: '#EF4444',
+          transform: [{ rotate: '-45deg' }],
+          borderRadius: 1,
+        }}
+      />
+    </View>
+  );
+}
+
+// Minimalist Sync / Reconnect Icon
+export function SyncIcon({ size = 14, color = '#818CF8' }: IconProps) {
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+      <View
+        style={{
+          width: size * 0.8,
+          height: size * 0.8,
+          borderRadius: size * 0.4,
+          borderWidth: 1.5,
+          borderColor: color,
+          borderTopColor: 'transparent',
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: size * 0.1,
+          width: 0,
+          height: 0,
+          borderLeftWidth: size * 0.16,
+          borderLeftColor: 'transparent',
+          borderRightWidth: size * 0.16,
+          borderRightColor: 'transparent',
+          borderBottomWidth: size * 0.22,
+          borderBottomColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
+// Minimalist Clock / Pending Icon
+export function ClockIcon({ size = 12, color = '#F59E0B' }: IconProps) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: 1.2,
+        borderColor: color,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <View
+        style={{
+          position: 'absolute',
+          width: 1.2,
+          height: size * 0.32,
+          backgroundColor: color,
+          top: size * 0.18,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          width: size * 0.25,
+          height: 1.2,
+          backgroundColor: color,
+          left: size * 0.45,
+        }}
+      />
+    </View>
+  );
+}

@@ -136,3 +136,19 @@
   - Build dashboard & QR code: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3`
 - Acceptance: PASS — EAS Cloud build completed with exit code 0; universal APK verified and ready for physical device installation.
 - Time spent: 0.5 h
+
+
+## Step 17 — Phase 2: Persistent Offline Queue & Network Synchronization — 2026-11-17
+- Did:
+  - Installed `@react-native-community/netinfo` for device network state tracking.
+  - Implemented `useNetworkStatus` hook with real-time connectivity status, internet reachability, and reconnection callbacks with web platform support.
+  - Built persistent offline storage layer (`mobile/src/lib/offlineQueue.ts`) powered by AsyncStorage storing queued messages with client-generated UUID primary keys, stream associations, timestamp tracking, and retry counts.
+  - Created `useOfflineQueue` hook managing auto-drain sequencing, rate-limit backoff, and idempotent DB sync.
+  - Upgraded `useChat` hook to automatically divert unsent messages to the persistent offline queue when disconnected or encountering network failures, and auto-drain FIFO on reconnection.
+  - Built `OfflineBanner` component with vector icons (`WifiOffIcon`, `SyncIcon`, `ClockIcon`) showing live queue counts and manual sync capabilities.
+  - Integrated queued badges and dynamic input placeholders into `ChatPanel` across viewer (`watch/[id].tsx`) and broadcaster (`broadcast/[id].tsx`) screens.
+- Broke: None.
+- Fixed: N/A.
+- Acceptance: PASS — `npx tsc --noEmit` verified 0 errors; `npx expo export --platform android` bundled 1,751 modules with 0 errors.
+- Time spent: 0.5 h
+

@@ -89,3 +89,16 @@ This document logs the core engineering prompts and developer instructions used 
 - Updated summary narrative text formatter to output duration ranges (`between 00:00 – 00:30`).
 - Synchronized database RPC and n8n workflows to generate 30-second interval buckets.
 
+---
+
+### Phase 2: Persistent Offline Outbox Queue & Network Synchronization
+**Prompt:**
+> "Alright now execute the plan for Phase 2."
+
+**Key Implementation Actions:**
+- Integrated `@react-native-community/netinfo` and authored `useNetworkStatus` hook with real-time connectivity listeners and platform fallbacks.
+- Built persistent outbox storage layer (`offlineQueue.ts`, `useOfflineQueue.ts`) powered by AsyncStorage storing queued messages with client-generated UUID primary keys, timestamp tracking, and retry counts.
+- Enhanced live chat pipeline (`useChat.ts`) to automatically divert outbound messages to persistent storage when offline or on network failure, with automatic FIFO queue draining and backoff upon network reconnection.
+- Designed vector-based `OfflineBanner` component and visual status badges (`ClockIcon`, `WifiOffIcon`, `SyncIcon`) inside `ChatPanel` across viewer (`watch/[id].tsx`) and creator (`broadcast/[id].tsx`) interfaces.
+
+

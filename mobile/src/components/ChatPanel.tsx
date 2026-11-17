@@ -14,18 +14,32 @@ import {
 import { ChatMessage } from '../hooks/useChat';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
-import { SendIcon } from './Icons';
+import { SendIcon, ClockIcon } from './Icons';
+import { OfflineBanner } from './OfflineBanner';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
   onSend: (content: string) => Promise<void>;
   onRetry: (id: string) => void;
   isEnded?: boolean;
+  isOnline?: boolean;
+  queueCount?: number;
+  isDraining?: boolean;
+  onManualSync?: () => void;
 }
 
 const QUICK_CHATS = ['GG', 'HYPE', 'W', 'FIRE', 'LFG', '100%'];
 
-export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps) {
+export function ChatPanel({
+  messages,
+  onSend,
+  onRetry,
+  isEnded,
+  isOnline = true,
+  queueCount = 0,
+  isDraining = false,
+  onManualSync,
+}: ChatPanelProps) {
   const { session, profile } = useSessionStore();
   const [input, setInput] = useState('');
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
@@ -176,6 +190,12 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
               {item.status === 'sending' && (
                 <ActivityIndicator size="small" color="#818CF8" style={styles.statusIndicator} />
               )}
+              {item.status === 'queued' && (
+                <View style={styles.queuedBadge}>
+                  <ClockIcon size={10} color="#F59E0B" />
+                  <Text style={styles.queuedText}>Queued</Text>
+                </View>
+              )}
               {item.status === 'failed' && (
                 <TouchableOpacity
                   onPress={() => onRetry(item.id)}
@@ -187,6 +207,14 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
             </View>
           );
         }}
+      />
+
+      {/* Offline Status & Queue Banner */}
+      <OfflineBanner
+        isOnline={isOnline}
+        queueCount={queueCount}
+        isDraining={isDraining}
+        onManualSync={onManualSync}
       />
 
       {/* Quick Reaction Chips */}
@@ -211,7 +239,13 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder={isEnded ? 'Stream has ended' : 'Say something in live chat...'}
+          placeholder={
+            !isOnline
+              ? 'Offline — message will queue...'
+              : isEnded
+              ? 'Stream has ended'
+              : 'Say something in live chat...'
+          }
           placeholderTextColor="#64748B"
           value={input}
           onChangeText={setInput}
@@ -308,6 +342,23 @@ const styles = StyleSheet.create({
   },
   statusIndicator: {
     marginBottom: 6,
+  },
+  queuedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  queuedText: {
+    color: '#FCD34D',
+    fontSize: 9,
+    fontWeight: '700',
   },
   retryBtn: {
     backgroundColor: '#7F1D1D',
