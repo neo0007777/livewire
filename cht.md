@@ -525,3 +525,17 @@
 - Verified git status, commit history hygiene, and secret isolation safeguards (`.gitignore` covering `.env`, service keys, build caches, and credentials).
 - Provisioned public production repository `neo0007777/livewire` on GitHub.
 - Configured remote tracking `origin/main` and pushed the complete codebase (mobile client, backend migrations & edge functions, n8n automation workflows, and documentation).
+
+### Turn 37: Screen Share Foreground Service & Camera Flip Track Pipeline (Build #10)
+**User:**
+> "so its working fine but some bugs are there so when iam sharing my screen over phone its not orking and when iam clicking on switch the camera its also not working don't make any changes to the github lets save it over here in case big bug come so i can bring the code back to here try to fix the changes"
+> "build 10"
+
+**Action Taken:**
+- Preserved verified production baseline: tagged `stable-v9-verified` at commit `f985f29`, branched `backup-stable`, and isolated ongoing fixes to local branch `fix/camera-switch-and-screenshare` without modifying the remote GitHub repository.
+- Diagnosed root causes for native mobile screen sharing and camera switching failures:
+  1. **Android MediaProjection Foreground Service Missing:** Android 14+ enforces mandatory foreground service authorization (`FOREGROUND_SERVICE_MEDIA_PROJECTION`) for `MediaProjectionManager`. Configured `enableScreenShareService: true` in `@livekit/react-native-expo-plugin` and added foreground service permissions in `app.json`.
+  2. **Native Screen Sharing Ingress:** Implemented native `mediaDevices.getDisplayMedia()` in `LocalPreview.native.tsx`, integrating seamless video track replacement via `sender.replaceTrack(screenTrack)` across all active viewer peer connections and handling system notification teardowns.
+  3. **Camera Flip Track Settings Disconnection:** In `@livekit/react-native-webrtc`, `_switchCamera` defaulted to `'user'` when track settings lacked facing mode keys. Implemented direct W3C `applyConstraints({ facingMode })` with a seamless `getUserMedia({ video: { facingMode } })` fallback that hot-swaps the camera track on all active peer senders without interrupting audio or terminating the connection.
+- Verified TypeScript compilation (`npx tsc --noEmit`) and web production export with 0 errors across 1,007 bundled modules.
+- Enqueued EAS Cloud Build #10 (`86e81853-6a38-4b38-85fe-098243c92954`) for universal Android release.
