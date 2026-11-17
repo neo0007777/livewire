@@ -149,6 +149,6 @@
   - Integrated queued badges and dynamic input placeholders into `ChatPanel` across viewer (`watch/[id].tsx`) and broadcaster (`broadcast/[id].tsx`) screens.
 - Broke: None.
 - Fixed: N/A.
-- Acceptance: PASS — `npx tsc --noEmit` verified 0 errors; `npx expo export --platform android` bundled 1,751 modules with 0 errors.
+- Acceptance: PASS — `npx tsc --noEmit` verified 0 errors; `npx expo export --platform android` bundled 1,751 modules with 0 errors. EAS Cloud preview build `4f4e2fc3-7c60-4212-8acf-396f4e50b7f3` completed with status finished (exit code 0); direct APK download URL: https://expo.dev/artifacts/eas/HaOaoqgYtKpyr3bL772CpO9G5jCb9qyOwOhCd5LwawY.apk
 - Time spent: 0.5 h
 
