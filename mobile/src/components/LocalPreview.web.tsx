@@ -4,9 +4,17 @@ import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 interface LocalPreviewProps {
   channel?: any;
   streamId?: string;
+  isMicMuted?: boolean;
+  isVideoMuted?: boolean;
+  facingMode?: 'user' | 'environment';
 }
 
-export function LocalPreview({ channel }: LocalPreviewProps) {
+export function LocalPreview({
+  channel,
+  isMicMuted = false,
+  isVideoMuted = false,
+  facingMode = 'user',
+}: LocalPreviewProps) {
   const videoRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -27,16 +35,15 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
 
       let stream: MediaStream | null = null;
       try {
-        // Try requesting video + audio first
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: true,
         });
       } catch (err: any) {
-        // If audio fails (e.g. no microphone detected or audio permission denied), try video only
+        // Fallback to video only if audio request fails
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: false,
           });
         } catch (videoErr: any) {
@@ -58,6 +65,10 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
       }
 
       if (stream) {
+        // Apply initial mute states
+        stream.getAudioTracks().forEach((t) => (t.enabled = !isMicMuted));
+        stream.getVideoTracks().forEach((t) => (t.enabled = !isVideoMuted));
+
         streamRef.current = stream;
         setLocalStream(stream);
         setHasPermission(true);
@@ -77,6 +88,74 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
     };
   }, []);
 
+  // 2. Handle Microphone Mute/Unmute
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = !isMicMuted;
+      });
+    }
+  }, [isMicMuted]);
+
+  // 3. Handle Video Camera Mute/Unmute
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.getVideoTracks().forEach((track) => {
+        track.enabled = !isVideoMuted;
+      });
+    }
+  }, [isVideoMuted]);
+
+  // 4. Handle Camera Flip (front / environment)
+  useEffect(() => {
+    if (!hasPermission) return;
+
+    let isCurrent = true;
+    async function switchCamera() {
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+
+        if (!isCurrent) {
+          newStream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        if (newVideoTrack && streamRef.current) {
+          const oldVideoTrack = streamRef.current.getVideoTracks()[0];
+          if (oldVideoTrack) {
+            oldVideoTrack.stop();
+            streamRef.current.removeTrack(oldVideoTrack);
+          }
+          newVideoTrack.enabled = !isVideoMuted;
+          streamRef.current.addTrack(newVideoTrack);
+
+          // Update active WebRTC peer connections
+          peersRef.current.forEach((pc) => {
+            const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+            if (sender) {
+              sender.replaceTrack(newVideoTrack).catch(() => {});
+            }
+          });
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = streamRef.current;
+          }
+        }
+      } catch (err) {
+        // Device might not have secondary camera (e.g. laptop desktop), ignore
+      }
+    }
+
+    switchCamera();
+    return () => {
+      isCurrent = false;
+    };
+  }, [facingMode]);
+
   // Bind local stream to video element
   useEffect(() => {
     if (videoRef.current && localStream) {
@@ -85,7 +164,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
     }
   }, [localStream]);
 
-  // 2. WebRTC P2P signaling to transmit camera to connected viewers
+  // 5. WebRTC P2P signaling to transmit camera to connected viewers
   useEffect(() => {
     if (!channel) return;
 
@@ -94,7 +173,6 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
       const viewerId = payload?.viewerId;
       if (!viewerId || !streamRef.current) return;
 
-      // Close previous connection if any
       if (peersRef.current.has(viewerId)) {
         peersRef.current.get(viewerId)?.close();
         peersRef.current.delete(viewerId);
@@ -108,7 +186,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
       });
       peersRef.current.set(viewerId, pc);
 
-      // Add local camera and mic tracks
+      // Add local tracks (with mute state preserved)
       streamRef.current.getTracks().forEach((track) => {
         pc.addTrack(track, streamRef.current!);
       });
@@ -132,7 +210,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
           payload: { targetId: viewerId, offer },
         });
       } catch (err) {
-        // Offer generation error handled
+        // Offer generation error
       }
     };
 
@@ -144,7 +222,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
         } catch (err) {
-          // Set remote description handled
+          // Handled
         }
       }
     };
@@ -158,7 +236,7 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch (err) {
-            // ICE candidate error handled
+            // Handled
           }
         }
       }
@@ -181,10 +259,28 @@ export function LocalPreview({ channel }: LocalPreviewProps) {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          transform: 'scaleX(-1)',
-          display: hasPermission ? 'block' : 'none',
+          transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+          display: hasPermission && !isVideoMuted ? 'block' : 'none',
         } as any}
       />
+
+      {/* Video Muted Overlay */}
+      {hasPermission && isVideoMuted && (
+        <View style={styles.videoMutedOverlay}>
+          <View style={styles.videoMutedCircle}>
+            <Text style={styles.videoMutedEmoji}>🚫</Text>
+          </View>
+          <Text style={styles.videoMutedTitle}>Camera is Paused</Text>
+          <Text style={styles.videoMutedSubtitle}>Your video feed is hidden from all viewers</Text>
+        </View>
+      )}
+
+      {/* Mic Muted floating alert */}
+      {hasPermission && isMicMuted && (
+        <View style={styles.micMutedAlert}>
+          <Text style={styles.micMutedAlertText}>🔇 Microphone Muted</Text>
+        </View>
+      )}
 
       {hasPermission === false && (
         <View style={styles.fallbackContainer}>
@@ -209,6 +305,53 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: '#000',
     overflow: 'hidden',
+  },
+  videoMutedOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#070913',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 8,
+  },
+  videoMutedCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  videoMutedEmoji: {
+    fontSize: 36,
+  },
+  videoMutedTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  videoMutedSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  micMutedAlert: {
+    position: 'absolute',
+    top: 150,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    zIndex: 10,
+  },
+  micMutedAlertText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   fallbackContainer: {
     ...StyleSheet.absoluteFill,

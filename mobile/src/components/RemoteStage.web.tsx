@@ -10,6 +10,9 @@ export function RemoteStage({ channel }: RemoteStageProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [isCreatorVideoPaused, setIsCreatorVideoPaused] = useState(false);
+  const [isCreatorMicMuted, setIsCreatorMicMuted] = useState(false);
+
   const videoRef = useRef<any>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const isConnectedRef = useRef(false);
@@ -94,8 +97,20 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       }
     };
 
+    // Handle creator video/mic mute states
+    const handleMediaState = ({ payload }: any) => {
+      if (!isMounted) return;
+      if (typeof payload?.isVideoMuted === 'boolean') {
+        setIsCreatorVideoPaused(payload.isVideoMuted);
+      }
+      if (typeof payload?.isMicMuted === 'boolean') {
+        setIsCreatorMicMuted(payload.isMicMuted);
+      }
+    };
+
     channel.on('broadcast', { event: 'p2p_offer' }, handleOffer);
     channel.on('broadcast', { event: 'p2p_ice' }, handleIce);
+    channel.on('broadcast', { event: 'creator_media_state' }, handleMediaState);
 
     // Ping creator to request stream
     const requestStream = () => {
@@ -133,9 +148,29 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          display: isConnected ? 'block' : 'none',
+          display: isConnected && !isCreatorVideoPaused ? 'block' : 'none',
         } as any}
       />
+
+      {/* Broadcaster Video Paused State for Viewers */}
+      {isConnected && isCreatorVideoPaused && (
+        <View style={styles.creatorPausedOverlay}>
+          <View style={styles.creatorPausedCircle}>
+            <Text style={styles.creatorPausedEmoji}>🚫</Text>
+          </View>
+          <Text style={styles.creatorPausedTitle}>Broadcaster Paused Video</Text>
+          <Text style={styles.creatorPausedSubtitle}>
+            The host has temporarily paused their camera feed
+          </Text>
+        </View>
+      )}
+
+      {/* Broadcaster Mic Muted Indicator */}
+      {isConnected && isCreatorMicMuted && (
+        <View style={styles.creatorMicMutedPill}>
+          <Text style={styles.creatorMicMutedText}>🔇 Host Mic Muted</Text>
+        </View>
+      )}
 
       {/* Connecting state */}
       {!isConnected && (
@@ -148,7 +183,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
 
       {/* Floating Audio Toggle for Viewer */}
       {isConnected && (
-        <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
+        <TouchableOpacity style={styles.muteButton} onPress={toggleMute} activeOpacity={0.8}>
           <Text style={styles.muteText}>{isMuted ? '🔇 Unmute' : '🔊 Audio On'}</Text>
         </TouchableOpacity>
       )}
@@ -164,7 +199,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#070913',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -177,25 +212,72 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   loadingSubtitle: {
-    color: '#9CA3AF',
+    color: '#94A3B8',
     fontSize: 13,
     textAlign: 'center',
   },
+  creatorPausedOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#070913',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 8,
+  },
+  creatorPausedCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  creatorPausedEmoji: {
+    fontSize: 36,
+  },
+  creatorPausedTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  creatorPausedSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  creatorMicMutedPill: {
+    position: 'absolute',
+    top: 96,
+    left: 14,
+    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    zIndex: 10,
+  },
+  creatorMicMutedText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
   muteButton: {
     position: 'absolute',
-    top: 90,
+    top: 96,
     right: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     zIndex: 10,
   },
   muteText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

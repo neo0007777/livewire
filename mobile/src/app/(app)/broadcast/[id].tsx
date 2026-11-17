@@ -29,6 +29,11 @@ export default function BroadcastScreen() {
   const [loading, setLoading] = useState(true);
   const [isEnding, setIsEnding] = useState(false);
 
+  // Broadcaster Hardware Media Controls
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+
   // Chat hook
   const {
     messages,
@@ -60,6 +65,17 @@ export default function BroadcastScreen() {
       fillGaps();
     }
   }, [channelStatus, fillGaps]);
+
+  // Broadcast media controls state to viewers
+  useEffect(() => {
+    if (channel) {
+      channel.send({
+        type: 'broadcast',
+        event: 'creator_media_state',
+        payload: { isMicMuted, isVideoMuted },
+      });
+    }
+  }, [channel, isMicMuted, isVideoMuted]);
 
   // Load LiveKit token
   useEffect(() => {
@@ -95,6 +111,19 @@ export default function BroadcastScreen() {
       router.replace(`/(app)/summary/${streamId}`);
     }
   }, [streamId, router]);
+
+  // Toggle handlers
+  const toggleMic = useCallback(() => {
+    setIsMicMuted((prev) => !prev);
+  }, []);
+
+  const toggleVideo = useCallback(() => {
+    setIsVideoMuted((prev) => !prev);
+  }, []);
+
+  const flipCamera = useCallback(() => {
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+  }, []);
 
   // Confirm End Stream
   const confirmEnd = useCallback(() => {
@@ -155,11 +184,17 @@ export default function BroadcastScreen() {
           serverUrl={tokenData.url}
           token={tokenData.token}
           connect={true}
-          audio={true}
-          video={true}
+          audio={!isMicMuted}
+          video={!isVideoMuted}
         >
           <View style={styles.room}>
-            <LocalPreview channel={channel} streamId={streamId} />
+            <LocalPreview
+              channel={channel}
+              streamId={streamId}
+              isMicMuted={isMicMuted}
+              isVideoMuted={isVideoMuted}
+              facingMode={facingMode}
+            />
 
             {/* Top Control Bar */}
             <View style={styles.topBar}>
@@ -185,6 +220,43 @@ export default function BroadcastScreen() {
                 <Text style={styles.endButtonText}>
                   {isEnding ? 'Ending...' : 'End Stream'}
                 </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Floating Broadcaster Quick Media Controls */}
+            <View style={styles.mediaToolbar}>
+              {/* Mic Toggle */}
+              <TouchableOpacity
+                style={[styles.mediaBtn, isMicMuted && styles.mediaBtnMuted]}
+                onPress={toggleMic}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.mediaBtnIcon}>{isMicMuted ? '🔇' : '🎙️'}</Text>
+                <Text style={[styles.mediaBtnText, isMicMuted && styles.mediaBtnTextMuted]}>
+                  {isMicMuted ? 'Mic Muted' : 'Mic On'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Video Camera Toggle */}
+              <TouchableOpacity
+                style={[styles.mediaBtn, isVideoMuted && styles.mediaBtnMuted]}
+                onPress={toggleVideo}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.mediaBtnIcon}>{isVideoMuted ? '🚫' : '📹'}</Text>
+                <Text style={[styles.mediaBtnText, isVideoMuted && styles.mediaBtnTextMuted]}>
+                  {isVideoMuted ? 'Video Paused' : 'Video On'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Flip Camera */}
+              <TouchableOpacity
+                style={styles.mediaBtn}
+                onPress={flipCamera}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.mediaBtnIcon}>🔄</Text>
+                <Text style={styles.mediaBtnText}>Flip Cam</Text>
               </TouchableOpacity>
             </View>
 
@@ -296,6 +368,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.3,
+  },
+  mediaToolbar: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 112 : 94,
+    left: 14,
+    flexDirection: 'row',
+    gap: 8,
+    zIndex: 10,
+  },
+  mediaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 20,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    gap: 5,
+    backdropFilter: 'blur(8px)',
+  } as any,
+  mediaBtnMuted: {
+    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    borderColor: '#EF4444',
+  },
+  mediaBtnIcon: {
+    fontSize: 13,
+  },
+  mediaBtnText: {
+    color: '#F8FAFC',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  mediaBtnTextMuted: {
+    color: '#FCA5A5',
   },
   chatOverlay: {
     position: 'absolute',
