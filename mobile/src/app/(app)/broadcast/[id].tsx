@@ -28,7 +28,6 @@ import { useSessionStore } from '../../../stores/session';
 import { useStreamChannel } from '../../../hooks/useStreamChannel';
 import { useChat } from '../../../hooks/useChat';
 import { usePresenceCount } from '../../../hooks/usePresenceCount';
-import { AudioSession } from '@livekit/react-native';
 import { requestBroadcastPermissions } from '../../../lib/permissions';
 
 export default function BroadcastScreen() {
@@ -87,16 +86,22 @@ export default function BroadcastScreen() {
   useEffect(() => {
     requestBroadcastPermissions();
     if (Platform.OS !== 'web') {
-      AudioSession.startAudioSession().catch((err: any) => {
-        console.warn('AudioSession start error:', err);
-      });
+      try {
+        const { AudioSession } = require('@livekit/react-native');
+        AudioSession.startAudioSession().catch((err: any) => {
+          console.warn('AudioSession start error:', err);
+        });
+      } catch (e) {}
     }
 
     return () => {
       if (Platform.OS !== 'web') {
-        AudioSession.stopAudioSession().catch((err: any) => {
-          console.warn('AudioSession stop error:', err);
-        });
+        try {
+          const { AudioSession } = require('@livekit/react-native');
+          AudioSession.stopAudioSession().catch((err: any) => {
+            console.warn('AudioSession stop error:', err);
+          });
+        } catch (e) {}
       }
     };
   }, []);

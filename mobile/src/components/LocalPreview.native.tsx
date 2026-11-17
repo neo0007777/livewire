@@ -1,0 +1,386 @@
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import {
+  mediaDevices,
+  RTCView,
+  RTCPeerConnection,
+  RTCIceCandidate,
+  RTCSessionDescription,
+  MediaStream,
+} from '@livekit/react-native-webrtc';
+import { VideoCameraOffIcon, FlipCameraIcon } from './Icons';
+import { requestBroadcastPermissions } from '../lib/permissions';
+
+interface LocalPreviewProps {
+  channel?: any;
+  streamId?: string;
+  isMicMuted?: boolean;
+  isVideoMuted?: boolean;
+  facingMode?: 'user' | 'environment';
+  isScreenSharing?: boolean;
+  onScreenShareChange?: (isSharing: boolean) => void;
+}
+
+export function LocalPreview({
+  channel,
+  isVideoMuted = false,
+  isMicMuted = false,
+  facingMode = 'user',
+}: LocalPreviewProps) {
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
+  const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const currentFacingRef = useRef<'user' | 'environment'>(facingMode);
+
+  // Initialize native Camera & Microphone directly via WebRTC mediaDevices
+  const initHardwareCamera = useCallback(async (facing: 'user' | 'environment') => {
+    setIsInitializing(true);
+    setPermissionDenied(false);
+
+    try {
+      const granted = await requestBroadcastPermissions();
+      if (!granted) {
+        setPermissionDenied(true);
+        setIsInitializing(false);
+        return;
+      }
+
+      // Stop previous tracks to prevent hardware camera lock
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
+      const stream = (await mediaDevices.getUserMedia({
+        video: {
+          facingMode: facing,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: 30,
+        },
+        audio: true,
+      })) as MediaStream;
+
+      // Apply initial mute states
+      stream.getVideoTracks().forEach((t) => {
+        t.enabled = !isVideoMuted;
+      });
+      stream.getAudioTracks().forEach((t) => {
+        t.enabled = !isMicMuted;
+      });
+
+      streamRef.current = stream;
+      setLocalStream(stream);
+      setIsInitializing(false);
+      currentFacingRef.current = facing;
+    } catch (err) {
+      console.warn('[LocalPreview.native] Camera initialization error:', err);
+      // Fallback: video only
+      try {
+        const videoOnly = (await mediaDevices.getUserMedia({
+          video: {
+            facingMode: facing,
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: 30,
+          },
+          audio: false,
+        })) as MediaStream;
+
+        videoOnly.getVideoTracks().forEach((t) => {
+          t.enabled = !isVideoMuted;
+        });
+
+        streamRef.current = videoOnly;
+        setLocalStream(videoOnly);
+        setIsInitializing(false);
+        currentFacingRef.current = facing;
+      } catch (videoErr) {
+        console.error('[LocalPreview.native] Fallback video-only failed:', videoErr);
+        setPermissionDenied(true);
+        setIsInitializing(false);
+      }
+    }
+  }, [isVideoMuted, isMicMuted]);
+
+  useEffect(() => {
+    initHardwareCamera(facingMode);
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      peersRef.current.forEach((pc) => pc.close());
+      peersRef.current.clear();
+    };
+  }, []);
+
+  // Handle camera flip when prop changes
+  useEffect(() => {
+    if (currentFacingRef.current !== facingMode && streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack && (videoTrack as any)._switchCamera) {
+        (videoTrack as any)._switchCamera();
+        currentFacingRef.current = facingMode;
+      } else {
+        initHardwareCamera(facingMode);
+      }
+    }
+  }, [facingMode, initHardwareCamera]);
+
+  // Handle mute toggles on active stream tracks
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.getVideoTracks().forEach((t) => {
+        t.enabled = !isVideoMuted;
+      });
+    }
+  }, [isVideoMuted]);
+
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach((t) => {
+        t.enabled = !isMicMuted;
+      });
+    }
+  }, [isMicMuted]);
+
+  // WebRTC P2P direct transmission to viewers (mobile or web) via Supabase Realtime channel
+  useEffect(() => {
+    if (!channel || !localStream) return;
+
+    const handleRequestStream = async ({ payload }: any) => {
+      const viewerId = payload?.viewerId;
+      if (!viewerId) return;
+
+      if (peersRef.current.has(viewerId)) {
+        peersRef.current.get(viewerId)?.close();
+        peersRef.current.delete(viewerId);
+      }
+
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      });
+      peersRef.current.set(viewerId, pc);
+
+      localStream.getTracks().forEach((track) => {
+        pc.addTrack(track, localStream);
+      });
+
+      pc.onicecandidate = (event: any) => {
+        if (event.candidate && channel) {
+          channel.send({
+            type: 'broadcast',
+            event: 'p2p_ice',
+            payload: { targetId: viewerId, fromId: 'creator', candidate: event.candidate },
+          });
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        channel.send({
+          type: 'broadcast',
+          event: 'p2p_offer',
+          payload: { targetId: viewerId, offer },
+        });
+      } catch (err) {
+        console.warn('[LocalPreview.native] Error creating P2P offer:', err);
+      }
+    };
+
+    const handleAnswer = async ({ payload }: any) => {
+      const viewerId = payload?.viewerId;
+      const pc = peersRef.current.get(viewerId);
+      if (pc && payload?.answer) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
+        } catch (err) {
+          console.warn('[LocalPreview.native] Error setting P2P remote description:', err);
+        }
+      }
+    };
+
+    const handleIce = async ({ payload }: any) => {
+      if (payload?.targetId === 'creator' && payload?.candidate) {
+        const pc = peersRef.current.get(payload?.fromId);
+        if (pc) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          } catch (err) {
+            console.warn('[LocalPreview.native] Error adding P2P ICE candidate:', err);
+          }
+        }
+      }
+    };
+
+    channel.on('broadcast', { event: 'p2p_request_stream' }, handleRequestStream);
+    channel.on('broadcast', { event: 'p2p_answer' }, handleAnswer);
+    channel.on('broadcast', { event: 'p2p_ice' }, handleIce);
+
+    return () => {
+      peersRef.current.forEach((pc) => pc.close());
+      peersRef.current.clear();
+    };
+  }, [channel, localStream]);
+
+  if (permissionDenied) {
+    return (
+      <View style={styles.errorContainer}>
+        <View style={styles.errorIconCircle}>
+          <VideoCameraOffIcon size={36} color="#EF4444" />
+        </View>
+        <Text style={styles.errorTitle}>Camera Permission Required</Text>
+        <Text style={styles.errorSubtitle}>
+          LiveWire needs access to your camera and microphone to broadcast live video.
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => initHardwareCamera(facingMode)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.retryButtonText}>Grant Permissions & Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (isVideoMuted) {
+    return (
+      <View style={styles.mutedContainer}>
+        <View style={styles.mutedIconCircle}>
+          <VideoCameraOffIcon size={40} color="#EF4444" />
+        </View>
+        <Text style={styles.mutedText}>Camera is Muted</Text>
+        <Text style={styles.mutedSubtext}>Audio is still streaming to your viewers</Text>
+      </View>
+    );
+  }
+
+  if (isInitializing || !localStream) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.initializingContainer}>
+          <ActivityIndicator size="large" color="#EF4444" style={{ marginBottom: 12 }} />
+          <Text style={styles.initializingText}>Initializing Camera...</Text>
+          <Text style={styles.initializingSub}>Accessing hardware sensor...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <RTCView
+        streamURL={localStream.toURL()}
+        style={StyleSheet.absoluteFill}
+        objectFit="cover"
+        mirror={facingMode === 'user'}
+        zOrder={0}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#070913',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initializingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  initializingText: {
+    color: '#F8FAFC',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  initializingSub: {
+    color: '#94A3B8',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  mutedContainer: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#070913',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  mutedIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  mutedText: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  mutedSubtext: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#070913',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  errorTitle: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubtitle: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+});
