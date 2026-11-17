@@ -290,3 +290,15 @@
   - Enforced `tabBarLabelPosition: 'below-icon'` across `screenOptions` to prevent React Navigation from shifting labels beside icons on broad viewports.
   - Symmetrized `goLiveBtn` container to 30x30px circle to fit standard tab icon bounding boxes.
   - Standardized string-based `tabBarLabel: 'Go Live'` with dedicated active red tinting (`#EF4444`) and focus indicator dot (`activeDotRed`), matching the visual hierarchy of the other tabs.
+
+### Turn 21: Hero Go Live Action Button & Vertical Tab Bar Centering
+**User:**
+> "it got hidden deep down" (Screenshot showing bottom tab bar items sunken against the screen bottom edge)
+
+**Action Taken:**
+- Redesigned the primary broadcast action into a custom `tabBarButton` hero pill in `mobile/src/app/(app)/(tabs)/_layout.tsx`:
+  - Replaced constrained default tab icon/label layout with a dedicated `tabBarButton` component, bypassing React Navigation's 31x28px UIKit icon bounding box.
+  - Formatted the "Go Live" action as a 36px hero pill with 18px corner radius, featuring inline flex layout (`flexDirection: 'row'`, `gap: 6`, `paddingHorizontal: 14`) combining the vector broadcast beacon and bold action text.
+  - Added active state transitions (`backgroundColor: '#EF4444'`, white text and beacon, elevated drop shadow with `#EF4444` ambient glow).
+  - Normalized tab navigation vertical centering: applied `tabBarItemStyle: { justifyContent: 'center', alignItems: 'center', paddingVertical: 4 }` with balanced vertical padding (`paddingTop: 6`, `paddingBottom: insets.bottom > 0 ? insets.bottom : 8`) and dynamic bar height (`Platform.OS === 'ios' ? 58 + insets.bottom : 64`).
+  - Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors across all modules.
