@@ -196,68 +196,83 @@ export default function BroadcastScreen() {
               facingMode={facingMode}
             />
 
-            {/* Top Control Bar */}
+            {/* Top Control Bar with Integrated Media Toolbar */}
             <View style={styles.topBar}>
-              <View style={styles.badgeRow}>
-                <View style={styles.liveBadge}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>LIVE</Text>
+              {/* Row 1: Live Status, Viewers, Quality, End Stream */}
+              <View style={styles.headerRow1}>
+                <View style={styles.badgeRow}>
+                  <View style={styles.liveBadge}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveText}>LIVE</Text>
+                  </View>
+
+                  <ViewerBadge count={viewerCount} />
+
+                  <View style={styles.streamQualityPill}>
+                    <Text style={styles.streamQualityText}>⚡ 1080p</Text>
+                  </View>
                 </View>
 
-                <ViewerBadge count={viewerCount} />
-
-                <View style={styles.streamQualityPill}>
-                  <Text style={styles.streamQualityText}>⚡ 1080p</Text>
-                </View>
+                <TouchableOpacity
+                  style={styles.endButton}
+                  onPress={confirmEnd}
+                  disabled={isEnding}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.endButtonText}>
+                    {isEnding ? 'Ending...' : 'End Stream'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                style={styles.endButton}
-                onPress={confirmEnd}
-                disabled={isEnding}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.endButtonText}>
-                  {isEnding ? 'Ending...' : 'End Stream'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+              {/* Row 2: Broadcaster Media Hardware Controls (Mic, Camera, Flip) */}
+              <View style={styles.controlsRow}>
+                {/* Mic Toggle */}
+                <TouchableOpacity
+                  style={[styles.mediaBtn, isMicMuted ? styles.mediaBtnMuted : styles.mediaBtnActive]}
+                  onPress={toggleMic}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.mediaBtnIcon}>{isMicMuted ? '🔇' : '🎙️'}</Text>
+                  <Text style={[styles.mediaBtnText, isMicMuted && styles.mediaBtnTextMuted]}>
+                    {isMicMuted ? 'Mic Muted' : 'Mic On'}
+                  </Text>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      isMicMuted ? styles.statusDotRed : styles.statusDotGreen,
+                    ]}
+                  />
+                </TouchableOpacity>
 
-            {/* Floating Broadcaster Quick Media Controls */}
-            <View style={styles.mediaToolbar}>
-              {/* Mic Toggle */}
-              <TouchableOpacity
-                style={[styles.mediaBtn, isMicMuted && styles.mediaBtnMuted]}
-                onPress={toggleMic}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.mediaBtnIcon}>{isMicMuted ? '🔇' : '🎙️'}</Text>
-                <Text style={[styles.mediaBtnText, isMicMuted && styles.mediaBtnTextMuted]}>
-                  {isMicMuted ? 'Mic Muted' : 'Mic On'}
-                </Text>
-              </TouchableOpacity>
+                {/* Video Camera Toggle */}
+                <TouchableOpacity
+                  style={[styles.mediaBtn, isVideoMuted ? styles.mediaBtnMuted : styles.mediaBtnActive]}
+                  onPress={toggleVideo}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.mediaBtnIcon}>{isVideoMuted ? '🚫' : '📹'}</Text>
+                  <Text style={[styles.mediaBtnText, isVideoMuted && styles.mediaBtnTextMuted]}>
+                    {isVideoMuted ? 'Camera Off' : 'Camera On'}
+                  </Text>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      isVideoMuted ? styles.statusDotRed : styles.statusDotGreen,
+                    ]}
+                  />
+                </TouchableOpacity>
 
-              {/* Video Camera Toggle */}
-              <TouchableOpacity
-                style={[styles.mediaBtn, isVideoMuted && styles.mediaBtnMuted]}
-                onPress={toggleVideo}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.mediaBtnIcon}>{isVideoMuted ? '🚫' : '📹'}</Text>
-                <Text style={[styles.mediaBtnText, isVideoMuted && styles.mediaBtnTextMuted]}>
-                  {isVideoMuted ? 'Video Paused' : 'Video On'}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Flip Camera */}
-              <TouchableOpacity
-                style={styles.mediaBtn}
-                onPress={flipCamera}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.mediaBtnIcon}>🔄</Text>
-                <Text style={styles.mediaBtnText}>Flip Cam</Text>
-              </TouchableOpacity>
+                {/* Flip Camera */}
+                <TouchableOpacity
+                  style={styles.mediaBtn}
+                  onPress={flipCamera}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.mediaBtnIcon}>🔄</Text>
+                  <Text style={styles.mediaBtnText}>Flip Cam</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Chat Overlay */}
@@ -303,18 +318,26 @@ const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 52 : 36,
     left: 14,
     right: 14,
+    zIndex: 50,
+    backgroundColor: 'rgba(10, 14, 26, 0.88)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  headerRow1: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 10,
-    backgroundColor: 'rgba(10, 14, 26, 0.75)',
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
-  } as any,
+    width: '100%',
+  },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -369,28 +392,32 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.3,
   },
-  mediaToolbar: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 112 : 94,
-    left: 14,
+  controlsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    zIndex: 10,
+    width: '100%',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   mediaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 20,
-    paddingHorizontal: 11,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 14,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     gap: 5,
-    backdropFilter: 'blur(8px)',
-  } as any,
+  },
+  mediaBtnActive: {
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(34, 197, 94, 0.35)',
+  },
   mediaBtnMuted: {
-    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
     borderColor: '#EF4444',
   },
   mediaBtnIcon: {
@@ -398,11 +425,23 @@ const styles = StyleSheet.create({
   },
   mediaBtnText: {
     color: '#F8FAFC',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   mediaBtnTextMuted: {
     color: '#FCA5A5',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginLeft: 2,
+  },
+  statusDotGreen: {
+    backgroundColor: '#22C55E',
+  },
+  statusDotRed: {
+    backgroundColor: '#EF4444',
   },
   chatOverlay: {
     position: 'absolute',
