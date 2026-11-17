@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInbox } from '../../../hooks/useInbox';
 import { MonitorIcon, BroadcastIcon, BellIcon, UserIcon } from '../../../components/Icons';
@@ -61,31 +61,20 @@ export default function TabLayout() {
         name="go-live"
         options={{
           title: 'Go Live',
-          tabBarButton: (props: any) => {
-            const isFocused = props.accessibilityState?.selected;
-            return (
-              <TouchableOpacity
-                {...props}
-                style={[props.style, styles.goLiveButtonWrapper]}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.goLiveHeroPill, isFocused && styles.goLiveHeroPillFocused]}>
-                  <BroadcastIcon
-                    size={16}
-                    color={isFocused ? '#FFFFFF' : '#EF4444'}
-                  />
-                  <Text
-                    style={[
-                      styles.goLiveHeroText,
-                      isFocused && styles.goLiveHeroTextFocused,
-                    ]}
-                  >
-                    Go Live
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          },
+          tabBarLabel: 'Go Live',
+          tabBarActiveTintColor: '#EF4444',
+          tabBarInactiveTintColor: '#EF4444',
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              <View style={[styles.goLiveBtn, focused && styles.goLiveBtnFocused]}>
+                <BroadcastIcon
+                  size={16}
+                  color={focused ? '#FFFFFF' : '#EF4444'}
+                />
+              </View>
+              {focused && <View style={styles.activeDotRed} />}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -143,39 +132,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -3,
   },
-  goLiveButtonWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  goLiveHeroPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    height: 36,
-    borderRadius: 18,
+  goLiveBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderWidth: 1.5,
     borderColor: '#EF4444',
-    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  goLiveHeroPillFocused: {
+  goLiveBtnFocused: {
     backgroundColor: '#EF4444',
     borderColor: '#F87171',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
-    elevation: 6,
+    transform: [{ scale: 1.05 }],
   },
-  goLiveHeroText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#EF4444',
-    letterSpacing: 0.3,
-  },
-  goLiveHeroTextFocused: {
-    color: '#FFFFFF',
+  activeDotRed: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    position: 'absolute',
+    bottom: -4,
   },
 });
