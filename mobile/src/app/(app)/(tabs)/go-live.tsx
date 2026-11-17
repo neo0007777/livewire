@@ -18,7 +18,10 @@ import {
   MicIcon,
   BroadcastIcon,
   BellIcon,
+  UserIcon,
 } from '../../../components/Icons';
+import { useSessionStore } from '../../../stores/session';
+import { supabase } from '../../../lib/supabase';
 
 export default function GoLiveScreen() {
   const router = useRouter();
@@ -27,6 +30,7 @@ export default function GoLiveScreen() {
   const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<StreamCategory>(initialCat);
   const [loading, setLoading] = useState(false);
+  const { session, profile, setSession, setProfile } = useSessionStore();
 
   const handleStartBroadcast = async () => {
     if (!title.trim()) {
@@ -48,6 +52,35 @@ export default function GoLiveScreen() {
     }
   };
 
+  const handleQuickSwitch = async (email: string, displayName: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'password123',
+      });
+      if (error) {
+        Alert.alert('Switch Account Failed', error.message);
+      } else if (data?.session) {
+        setSession(data.session);
+        setProfile({
+          id: data.session.user.id,
+          display_name: displayName,
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const currentEmail = session?.user?.email || '';
+  const isShiva = currentEmail === 'shiva@test.com';
+  const targetEmail = isShiva ? 'cdsc@test.com' : 'shiva@test.com';
+  const targetName = isShiva ? 'cdsc' : 'shiva';
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Studio Header */}
@@ -59,6 +92,33 @@ export default function GoLiveScreen() {
         <Text style={styles.subtitle}>
           Broadcast real-time video, audio, and interactive chat to your audience worldwide.
         </Text>
+      </View>
+
+      {/* Broadcaster Account Card & Tab-Level Account Switcher */}
+      <View style={styles.accountCard}>
+        <View style={styles.accountLeft}>
+          <View style={styles.accountAvatar}>
+            <Text style={styles.accountAvatarText}>
+              {(profile?.display_name || currentEmail.charAt(0) || 'U').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.accountDetails}>
+            <Text style={styles.accountLabel}>CURRENT BROADCASTER</Text>
+            <Text style={styles.accountTitle}>
+              {profile?.display_name || currentEmail.split('@')[0] || 'Broadcaster'}{' '}
+              <Text style={styles.accountEmail}>({currentEmail})</Text>
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.switchButton}
+          onPress={() => handleQuickSwitch(targetEmail, targetName)}
+          disabled={loading}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.switchButtonText}>Switch to {targetName}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Hardware & Network Status Cards */}
@@ -188,7 +248,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerRow: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   studioBadge: {
     alignSelf: 'flex-start',
@@ -217,6 +277,70 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94A3B8',
     lineHeight: 20,
+  },
+  accountCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0E1322',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.25)',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 18,
+    gap: 12,
+  },
+  accountLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  accountAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#4338CA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  accountAvatarText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  accountDetails: {
+    flex: 1,
+  },
+  accountLabel: {
+    color: '#818CF8',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  accountTitle: {
+    color: '#F8FAFC',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  accountEmail: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  switchButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  switchButtonText: {
+    color: '#E2E8F0',
+    fontSize: 11,
+    fontWeight: '700',
   },
   hardwareGrid: {
     flexDirection: 'row',

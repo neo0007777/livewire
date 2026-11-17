@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { ViewerBadge } from '../../../components/ViewerBadge';
+import { useSessionStore } from '../../../stores/session';
 import {
   FILTER_CATEGORIES,
   getStreamCategory,
@@ -32,6 +33,7 @@ interface StreamItem {
 
 export default function LiveStreamsScreen() {
   const router = useRouter();
+  const { session, profile } = useSessionStore();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -120,11 +122,19 @@ export default function LiveStreamsScreen() {
           </View>
         </View>
 
-        <View style={styles.activePill}>
-          <View style={styles.activeDot} />
-          <Text style={styles.activeText}>
-            {filteredStreams.length} {selectedCategory === 'all' ? 'LIVE NOW' : 'ONLINE'}
-          </Text>
+        <View style={styles.headerRight}>
+          <View style={styles.activePill}>
+            <View style={styles.activeDot} />
+            <Text style={styles.activeText}>
+              {filteredStreams.length} {selectedCategory === 'all' ? 'LIVE NOW' : 'ONLINE'}
+            </Text>
+          </View>
+
+          <View style={styles.userBadge}>
+            <Text style={styles.userBadgeText}>
+              {profile?.display_name || session?.user?.email?.split('@')[0] || 'User'}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -315,6 +325,11 @@ const styles = StyleSheet.create({
     color: '#818CF8',
     letterSpacing: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -337,6 +352,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FCA5A5',
     letterSpacing: 0.5,
+  },
+  userBadge: {
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  userBadgeText: {
+    color: '#A5B4FC',
+    fontSize: 10,
+    fontWeight: '800',
   },
   categoryContainer: {
     paddingVertical: 8,
