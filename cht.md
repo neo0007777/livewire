@@ -399,3 +399,22 @@
      - Hardware camera flipping via `track._switchCamera()`.
      - Direct WebRTC P2P stream publishing over Supabase Realtime channel to viewer devices.
 - Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
+
+### Turn 28: WebRTC P2P Signaling Hardening, SFU Contention Removal & Universal Fallbacks
+**User:**
+> "still can not see livestream from my phone or able to do from my phone as the camera an microphone are not working and while watching someonelse stream its just a black screen" (Provided screenshots showing camera stuck on "Initializing Camera..." and viewer stage waiting for video feed)
+
+**Action Taken:**
+- Diagnosed root causes:
+  1. **Hardware Camera Contention:** On native Android, `<LiveKitWrapper>` wrapped the stage with `<LiveKitRoom serverUrl="wss://placeholder.livekit.cloud" video={true} audio={true}>`. The LiveKit Room manager's internal attempt to acquire camera tracks collided with the native WebRTC `mediaDevices.getUserMedia()` call in `LocalPreview.native.tsx`, causing Android CameraService to throw `ERROR_CAMERA_IN_USE` or hang.
+  2. **Premature Offer Tearing in P2P Signaling:** In both native and web broadcaster pipelines, receiving duplicate `p2p_request_stream` pings from viewers abruptly closed existing `RTCPeerConnection` instances during ICE negotiation, resetting the handshake in an infinite loop and leaving viewers on a black screen.
+  3. **Out-of-Order ICE Candidate Drops:** In high-latency or mobile cellular conditions, `p2p_ice` candidates arrived before `RTCPeerConnection.setRemoteDescription()` was executed, causing unbuffered candidate drops and preventing NAT hole-punching.
+  4. **Strict Permission Gating:** Broadcaster initialization previously blocked both video and audio if microphone permission alone was denied, preventing graceful fallback to video-only broadcasting.
+- Architectural Solutions Applied:
+  1. **Placeholder SFU Bypass in `LiveKitWrapper.tsx`:** Updated wrapper component to detect placeholder LiveKit Cloud URLs and render children directly inside a native container view, eliminating connection socket retry loops and hardware device contention while preserving full forward-compatibility when a production LiveKit Cloud URL is provided.
+  2. **Multi-Tier Resolution & Audio Constraint Cascade:** Implemented an 8-tier hardware fallback cascade in `LocalPreview.native.tsx` (720p audio -> 720p mute -> 480p audio -> 480p mute -> facingMode audio -> facingMode mute -> unconstrained video audio -> unconstrained video mute).
+  3. **ICE Candidate Queuing & Buffer Flush:** Implemented candidate queuing (`pendingIceRef`) across all native and web streaming components (`LocalPreview.native.tsx`, `RemoteStage.native.tsx`, `LocalPreview.web.tsx`, `RemoteStage.web.tsx`), buffering early ICE candidates and flushing them immediately upon remote session description completion.
+  4. **Negotiation Window Protection:** Added duplicate offer guard (`signalingState === 'have-local-offer'` check within 4,000ms window) to prevent connection teardown during active handshakes.
+  5. **Dual-Track Stream Recovery:** Extended `pc.ontrack` handler in `RemoteStage.native.tsx` and `RemoteStage.web.tsx` to dynamically construct and accumulate media streams when audio and video tracks arrive as individual streams or standalone tracks.
+  6. **Resilient Permission Handler:** Refactored `requestBroadcastPermissions` in `permissions.ts` to guarantee stream launch if camera access is granted, allowing audio to operate in best-effort mode without hard blocking.
+- Verified TypeScript compilation and Expo production export with 0 errors across 1,007 bundled modules.
