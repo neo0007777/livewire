@@ -14,8 +14,8 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 
 | Deliverable | Description | Direct Link |
 |---|---|---|
-| **Android Universal APK** | Production internal distribution build (installs on any Android 8.0+ phone) | [📥 Download `livewire-preview.apk` (Direct Download)](https://expo.dev/artifacts/eas/8dLFL2R8B4E3N8ZShoAl8nwF6dTDLL5XzT3PmO2gIPA.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582) |
-| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #5fd47f16](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582) |
+| **Android Universal APK** | Production internal distribution build (installs on any Android 8.0+ phone) | [📥 Download `livewire-preview.apk` (Direct Download)](https://expo.dev/artifacts/eas/qKF6ETxYi3UAhlTveZQPQCFVyGOnVDKUSDIInaEq8tw.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/1ff2a7be-7570-422b-bc1d-7aabd6b81ffa) |
+| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #1ff2a7be](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/1ff2a7be-7570-422b-bc1d-7aabd6b81ffa) |
 | **Video Walkthrough (3 Min)** | 3-minute video covering Creator Go Live, Viewer Join, Chat, and Analytics | `[Link to Loom Video Demo]` |
 | **Build Blueprint** | Original 1,700-line architecture specification & build requirements | [📄 `docs/BLUEPRINT.md`](./docs/BLUEPRINT.md) |
 | **Engineering Prompt History** | Full conversational prompts and technical evolution logs | [📄 `PROMPTS.md`](./PROMPTS.md) & [📄 `cht.md`](./cht.md) |
@@ -28,7 +28,7 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 ## 📲 Android APK Installation & Testing Guide
 
 1. **Download the APK:**  
-   Tap [**Download `livewire-preview.apk`**](https://expo.dev/artifacts/eas/8dLFL2R8B4E3N8ZShoAl8nwF6dTDLL5XzT3PmO2gIPA.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582).
+   Tap [**Download `livewire-preview.apk`**](https://expo.dev/artifacts/eas/qKF6ETxYi3UAhlTveZQPQCFVyGOnVDKUSDIInaEq8tw.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/1ff2a7be-7570-422b-bc1d-7aabd6b81ffa).
 2. **Install on Device:**  
    Open the downloaded file. When prompted, tap **Settings** and toggle **Allow from this source** (standard for internal distribution APKs).
 3. **Sign In with Demo Presets:**  
