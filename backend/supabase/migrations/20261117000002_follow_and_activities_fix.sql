@@ -1,4 +1,4 @@
--- Master Fix: Multi-Stream + Follow System + Activity Notifications
+-- Master Fix: Multi-Stream + Follow System + Activity Notifications + Instant AI Highlights
 -- Run this in Supabase SQL Editor
 
 -- 1. Allow 'new_follower' in notifications constraint
@@ -10,7 +10,118 @@ alter table public.notifications add constraint notifications_type_check
 drop policy if exists "notifications insert" on public.notifications;
 create policy "notifications insert" on public.notifications for insert to authenticated with check (true);
 
--- 3. Atomic toggle_follow RPC function (handles follow + activity notification)
+-- 3. Allow authenticated users to view stream highlights
+drop policy if exists "highlights read" on public.stream_highlights;
+create policy "highlights read" on public.stream_highlights for select to authenticated using (true);
+
+-- 4. Instant Highlights Generation Function (Pre-generates recap so UI never hangs waiting for n8n)
+create or replace function public.generate_stream_highlights(p_stream_id uuid)
+returns public.stream_highlights language plpgsql security definer set search_path = '' as $$
+declare
+  v_stream public.streams;
+  v_total_msgs int;
+  v_duration int;
+  v_top_moment_time text := '00:00';
+  v_summary text;
+  v_moments jsonb := '[]'::jsonb;
+  v_result public.stream_highlights;
+begin
+  select * into v_stream from public.streams where id = p_stream_id;
+  if v_stream.id is null then raise exception 'stream_not_found'; end if;
+
+  select count(*)::int into v_total_msgs from public.chat_messages where stream_id = p_stream_id;
+  v_duration := greatest(0, extract(epoch from (coalesce(v_stream.ended_at, now()) - v_stream.started_at))::int);
+
+  -- Calculate busiest 30-second chat intervals
+  with msg_buckets as (
+    select
+      floor(greatest(0, extract(epoch from (m.created_at - v_stream.started_at))::int) / 30) * 30 as bucket_start,
+      count(*)::int as count
+    from public.chat_messages m
+    where m.stream_id = p_stream_id
+    group by 1
+    order by count desc
+    limit 3
+  )
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'start_seconds', bucket_start,
+        'end_seconds', bucket_start + 30,
+        'message_count', count
+      ) order by bucket_start
+    ), '[]'::jsonb
+  ) into v_moments from msg_buckets;
+
+  if v_total_msgs > 0 and jsonb_array_length(v_moments) > 0 then
+    v_top_moment_time := lpad((((v_moments->0->>'start_seconds')::int) / 60)::text, 2, '0') || ':' ||
+                         lpad((((v_moments->0->>'start_seconds')::int) % 60)::text, 2, '0');
+    v_summary := '"' || v_stream.title || '" ran ' || round(v_duration / 60.0, 1)::text || ' min, peaked at ' ||
+                 v_stream.peak_viewers || ' viewers with ' || v_total_msgs ||
+                 ' chat messages. Peak chat excitement occurred at ' || v_top_moment_time || '.';
+  else
+    v_summary := '"' || v_stream.title || '" ran ' || round(v_duration / 60.0, 1)::text || ' min, peaked at ' ||
+                 v_stream.peak_viewers || ' viewers. Broadcast concluded smoothly.';
+  end if;
+
+  insert into public.stream_highlights
+    (stream_id, peak_viewers, total_messages, duration_seconds, moments, summary, summary_source)
+  values
+    (p_stream_id, v_stream.peak_viewers, v_total_msgs, v_duration, v_moments, v_summary, 'automated')
+  on conflict (stream_id) do update
+    set moments = excluded.moments,
+        summary = case when stream_highlights.summary_source = 'ai' then stream_highlights.summary else excluded.summary end,
+        summary_source = stream_highlights.summary_source,
+        total_messages = excluded.total_messages,
+        peak_viewers = excluded.peak_viewers,
+        duration_seconds = excluded.duration_seconds
+  returning * into v_result;
+
+  -- Notify creator in notifications
+  insert into public.notifications (user_id, type, title, body, data, dedupe_key)
+  values (
+    v_stream.creator_id,
+    'highlights_ready',
+    'Stream Recap Ready',
+    '"' || v_stream.title || '" — peak ' || v_stream.peak_viewers || ' viewers',
+    jsonb_build_object('stream_id', v_stream.id),
+    'highlights:' || v_stream.id || ':' || v_stream.creator_id
+  ) on conflict (user_id, dedupe_key) do nothing;
+
+  return v_result;
+end $$;
+
+grant execute on function public.generate_stream_highlights(uuid) to authenticated;
+
+-- 5. end_stream: concludes broadcast and automatically generates highlights
+create or replace function public.end_stream(p_stream_id uuid)
+returns public.streams language plpgsql security definer set search_path = '' as $$
+declare
+  result public.streams;
+begin
+  update public.streams
+     set status = 'ended', ended_at = now(), current_viewers = 0
+   where id = p_stream_id and creator_id = auth.uid() and status = 'live'
+  returning * into result;
+
+  if result.id is null then
+    select * into result from public.streams where id = p_stream_id and creator_id = auth.uid();
+  end if;
+
+  if result.id is not null then
+    begin
+      perform public.generate_stream_highlights(result.id);
+    exception when others then
+      null;
+    end;
+  end if;
+
+  return result;
+end $$;
+
+grant execute on function public.end_stream(uuid) to authenticated;
+
+-- 6. Atomic toggle_follow RPC function (handles follow + activity notification)
 create or replace function public.toggle_follow(p_creator_id uuid)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
@@ -26,7 +137,6 @@ begin
     return jsonb_build_object('error', 'cannot_follow_self', 'is_following', false);
   end if;
 
-  -- Ensure profile exists
   insert into public.profiles (id, display_name)
   select u.id, coalesce(nullif(trim(u.raw_user_meta_data ->> 'display_name'), ''), split_part(u.email, '@', 1))
   from auth.users u where u.id = v_uid
@@ -68,39 +178,7 @@ end $$;
 
 grant execute on function public.toggle_follow(uuid) to authenticated;
 
--- 4. Automatic database trigger when any follow is created
-create or replace function public.on_follow_created()
-returns trigger language plpgsql security definer set search_path = '' as $$
-declare
-  v_follower_name text;
-begin
-  select display_name into v_follower_name from public.profiles where id = new.follower_id;
-
-  insert into public.notifications (
-    user_id,
-    type,
-    title,
-    body,
-    data,
-    dedupe_key
-  ) values (
-    new.creator_id,
-    'new_follower',
-    'New Follower!',
-    coalesce(v_follower_name, 'Someone') || ' started following you.',
-    jsonb_build_object('follower_id', new.follower_id),
-    'follow:' || new.follower_id || ':' || new.creator_id || ':' || extract(epoch from now())::text
-  ) on conflict (user_id, dedupe_key) do nothing;
-
-  return new;
-end $$;
-
-drop trigger if exists on_follow_created_trigger on public.follows;
-create trigger on_follow_created_trigger
-  after insert on public.follows
-  for each row execute function public.on_follow_created();
-
--- 5. Multi-stream support (prevents auto-ending active broadcasts)
+-- 7. Multi-stream support (prevents auto-ending active broadcasts)
 create or replace function public.start_stream(p_title text)
 returns public.streams language plpgsql security definer set search_path = '' as $$
 declare
@@ -118,17 +196,14 @@ begin
 
   select display_name into v_creator_name from public.profiles where id = uid;
 
-  -- Only auto-end streams that are completely abandoned (> 2 hours without heartbeat)
   update public.streams
      set status = 'ended', ended_at = now(), current_viewers = 0
    where creator_id = uid and status = 'live' and last_heartbeat_at < now() - interval '2 hours';
 
-  -- Insert new live stream
   insert into public.streams (id, creator_id, title, room_name)
   values (new_id, uid, trim(p_title), 'stream_' || replace(new_id::text, '-', ''))
   returning * into result;
 
-  -- Immediately notify all followers that this creator went live
   insert into public.notifications (user_id, type, title, body, data, dedupe_key)
   select f.follower_id,
          'stream_live',
