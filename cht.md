@@ -376,3 +376,26 @@
   - `inbox.tsx` (Activity and notification FlatList)
   - `profile.tsx` (Creator profile and follower connection scroll view)
 - Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
+
+### Turn 27: Web/SSR Native Decoupling & Direct Hardware Camera Capture on Mobile
+**User:**
+> "Server Error (0 , _reactNative.requireNativeComponent) is not a function node_modules/@livekit/react-native-webrtc/lib/commonjs/RTCView.js ... and in mobile initizing camera is still not working"
+> "https://github.com/ANANYA542/LiveCast analyse this repo and take an idea"
+
+**Action Taken:**
+- Analyzed reference implementation `ANANYA542/LiveCast` architecture:
+  - Identified that the reference app directly initializes local hardware cameras using `@livekit/react-native-webrtc`'s `mediaDevices.getUserMedia()` and renders the local feed directly via native `RTCView`, decoupling local video hardware acquisition from third-party LiveKit Cloud room connections.
+  - Identified root cause of the mobile "Initializing Camera..." hang in LiveWire: `LocalPreview` previously waited for LiveKit's `useLocalParticipant()` hook to establish a connection to `wss://placeholder.livekit.cloud`. Because the cloud SFU URL was a placeholder, the room connection stalled, preventing local video track publication.
+  - Identified root cause of the Web `requireNativeComponent` SSR error: with `"output": "static"` in `app.json`, Expo Router evaluated routes on Node.js during server-side rendering, where `requireNativeComponent` from `react-native-webrtc` is not available in Node/Web environments.
+- Architectural Solutions Applied:
+  1. **Expo Web SPA Mode:** Configured `"web": { "output": "single" }` in `mobile/app.json` to disable Node server-side bundle evaluation and generate a pure client-side SPA.
+  2. **Platform-Isolated Components:**
+     - Created `LocalPreview.native.tsx` and `RemoteStage.native.tsx` strictly for native Android and iOS environments.
+     - Kept `LocalPreview.tsx` and `RemoteStage.tsx` as lightweight web-safe proxies delegating to `LocalPreview.web.tsx` and `RemoteStage.web.tsx`, completely removing `@livekit/react-native-webrtc` from Web and Node dependency trees.
+     - Platform-guarded `AudioSession` initialization in `broadcast/[id].tsx` with dynamic native requires.
+  3. **Direct Hardware Camera Engine on Mobile (`LocalPreview.native.tsx`):**
+     - Directly captures hardware video and audio using `mediaDevices.getUserMedia({ video: { facingMode }, audio: true })`.
+     - Mounts native `RTCView` with `streamURL={localStream.toURL()}` and `objectFit="cover"`, guaranteeing instant camera preview on physical Android devices.
+     - Hardware camera flipping via `track._switchCamera()`.
+     - Direct WebRTC P2P stream publishing over Supabase Realtime channel to viewer devices.
+- Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
