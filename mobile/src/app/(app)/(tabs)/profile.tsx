@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform, ScrollView } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { useSessionStore } from '../../../stores/session';
+import { CheckIcon } from '../../../components/Icons';
 
 export default function ProfileScreen() {
   const { profile, session, signOut } = useSessionStore();
@@ -82,7 +83,7 @@ export default function ProfileScreen() {
         <View style={styles.nameRow}>
           <Text style={styles.name}>{profile?.display_name || 'Broadcaster'}</Text>
           <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedText}>✓</Text>
+            <CheckIcon size={9} color="#38BDF8" />
           </View>
         </View>
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Link } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { BroadcastIcon } from '../../components/Icons';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -35,7 +36,7 @@ export default function SignInScreen() {
         {/* Brand Header */}
         <View style={styles.brandRow}>
           <View style={styles.logoBadge}>
-            <Text style={styles.logoIcon}>⚡</Text>
+            <BroadcastIcon size={20} color="#EF4444" />
           </View>
           <View>
             <Text style={styles.brandTitle}>LIVEWIRE</Text>
@@ -84,7 +85,7 @@ export default function SignInScreen() {
 
           {/* Quick Demo Credentials for Fast Testing */}
           <View style={styles.quickFillContainer}>
-            <Text style={styles.quickFillLabel}>⚡ QUICK TEST PRESETS</Text>
+            <Text style={styles.quickFillLabel}>DEMO TEST PRESETS</Text>
             <View style={styles.presetButtonsRow}>
               <TouchableOpacity
                 style={styles.presetBtn}

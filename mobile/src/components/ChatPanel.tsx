@@ -14,6 +14,7 @@ import {
 import { ChatMessage } from '../hooks/useChat';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
+import { SendIcon } from './Icons';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -22,7 +23,7 @@ interface ChatPanelProps {
   isEnded?: boolean;
 }
 
-const QUICK_REACTIONS = ['🔥', '❤️', '🚀', '👏', '💯', '😂', '🎉', '⚡'];
+const QUICK_CHATS = ['GG', 'HYPE', 'W', 'FIRE', 'LFG', '100%'];
 
 export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps) {
   const { session, profile } = useSessionStore();
@@ -142,7 +143,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
                       activeOpacity={0.7}
                     >
                       <Text style={[styles.chatFollowBtnText, isFollowed && styles.chatFollowingBtnText]}>
-                        {isFollowed ? '✓ Following' : '+ Follow'}
+                        {isFollowed ? 'Following' : '+ Follow'}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -159,7 +160,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
                   onPress={() => onRetry(item.client_message_id)}
                   style={styles.retryBtn}
                 >
-                  <Text style={styles.retryText}>⚠️ Retry</Text>
+                  <Text style={styles.retryText}>Retry</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -167,18 +168,18 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
         }}
       />
 
-      {/* Quick Emoji Reaction Ribbon */}
+      {/* Quick Reaction Chips */}
       {!isEnded && (
         <View style={styles.reactionRibbon}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.reactionsScroll}>
-            {QUICK_REACTIONS.map((emoji) => (
+            {QUICK_CHATS.map((label) => (
               <TouchableOpacity
-                key={emoji}
+                key={label}
                 style={styles.reactionPill}
-                onPress={() => handleSend(emoji)}
+                onPress={() => handleSend(label)}
                 activeOpacity={0.65}
               >
-                <Text style={styles.reactionEmoji}>{emoji}</Text>
+                <Text style={styles.reactionLabel}>{label}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -203,7 +204,7 @@ export function ChatPanel({ messages, onSend, onRetry, isEnded }: ChatPanelProps
           disabled={!input.trim() || isEnded}
           activeOpacity={0.8}
         >
-          <Text style={styles.sendIcon}>➤</Text>
+          <SendIcon size={14} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -227,15 +228,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   bubble: {
-    backgroundColor: 'rgba(10, 14, 26, 0.78)',
+    backgroundColor: 'rgba(10, 14, 26, 0.82)',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 14,
     maxWidth: '90%',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(8px)',
-  } as any,
+  },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -267,10 +267,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#4F46E5',
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   chatFollowingBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   chatFollowBtnText: {
     color: '#FFF',
@@ -290,33 +290,36 @@ const styles = StyleSheet.create({
   },
   retryBtn: {
     backgroundColor: '#7F1D1D',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
     marginBottom: 6,
   },
   retryText: {
     color: '#FCA5A5',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   reactionRibbon: {
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   reactionsScroll: {
-    gap: 8,
+    gap: 6,
   },
   reactionPill: {
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 14,
+    borderRadius: 10,
   },
-  reactionEmoji: {
-    fontSize: 14,
+  reactionLabel: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -328,7 +331,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    backgroundColor: 'rgba(15, 23, 42, 0.88)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 24,
@@ -338,15 +341,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   sendButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#4F46E5',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 4,
   },
@@ -354,11 +357,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
     shadowOpacity: 0,
     elevation: 0,
-  },
-  sendIcon: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginLeft: 2,
   },
 });

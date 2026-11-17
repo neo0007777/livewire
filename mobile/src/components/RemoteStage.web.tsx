@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { VideoCameraOffIcon, MicMutedIcon, MicIcon } from './Icons';
 
 interface RemoteStageProps {
   channel?: any;
@@ -156,7 +157,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       {isConnected && isCreatorVideoPaused && (
         <View style={styles.creatorPausedOverlay}>
           <View style={styles.creatorPausedCircle}>
-            <Text style={styles.creatorPausedEmoji}>🚫</Text>
+            <VideoCameraOffIcon size={36} color="#EF4444" />
           </View>
           <Text style={styles.creatorPausedTitle}>Broadcaster Paused Video</Text>
           <Text style={styles.creatorPausedSubtitle}>
@@ -168,7 +169,8 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       {/* Broadcaster Mic Muted Indicator */}
       {isConnected && isCreatorMicMuted && (
         <View style={styles.creatorMicMutedPill}>
-          <Text style={styles.creatorMicMutedText}>🔇 Host Mic Muted</Text>
+          <MicMutedIcon size={12} color="#FFF" />
+          <Text style={styles.creatorMicMutedText}>Host Mic Muted</Text>
         </View>
       )}
 
@@ -184,7 +186,12 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       {/* Floating Audio Toggle for Viewer */}
       {isConnected && (
         <TouchableOpacity style={styles.muteButton} onPress={toggleMute} activeOpacity={0.8}>
-          <Text style={styles.muteText}>{isMuted ? '🔇 Unmute' : '🔊 Audio On'}</Text>
+          {isMuted ? (
+            <MicMutedIcon size={13} color="#EF4444" />
+          ) : (
+            <MicIcon size={13} color="#22C55E" />
+          )}
+          <Text style={styles.muteText}>{isMuted ? 'Unmute' : 'Audio On'}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -257,6 +264,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 14,
     zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   creatorMicMutedText: {
     color: '#FFF',
@@ -274,6 +284,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   muteText: {
     color: '#FFFFFF',

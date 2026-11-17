@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
 import { AppNotification } from '../hooks/useInbox';
+import { BroadcastIcon, UserIcon, EyeIcon, BellIcon, CloseIcon } from './Icons';
 
 export function InAppBanner() {
   const router = useRouter();
@@ -68,19 +69,24 @@ export function InAppBanner() {
     setCurrentNotif(null);
   };
 
+  const renderIcon = () => {
+    switch (currentNotif.type) {
+      case 'stream_live':
+        return <BroadcastIcon size={16} color="#EF4444" />;
+      case 'new_follower':
+        return <UserIcon size={16} color="#818CF8" />;
+      case 'viewer_milestone':
+        return <EyeIcon size={16} color="#F59E0B" />;
+      default:
+        return <BellIcon size={16} color="#CBD5E1" />;
+    }
+  };
+
   return (
     <Animated.View style={[styles.bannerContainer, { transform: [{ translateY: slideAnim }] }]}>
       <TouchableOpacity style={styles.banner} activeOpacity={0.9} onPress={handlePress}>
         <View style={styles.iconBox}>
-          <Text style={styles.icon}>
-            {currentNotif.type === 'stream_live'
-              ? '🔴'
-              : currentNotif.type === 'new_follower'
-              ? '👤'
-              : currentNotif.type === 'viewer_milestone'
-              ? '🎉'
-              : '🔔'}
-          </Text>
+          {renderIcon()}
         </View>
 
         <View style={styles.textContainer}>
@@ -93,7 +99,7 @@ export function InAppBanner() {
         </View>
 
         <TouchableOpacity style={styles.closeButton} onPress={() => setCurrentNotif(null)}>
-          <Text style={styles.closeText}>✕</Text>
+          <CloseIcon size={12} color="#94A3B8" />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
@@ -107,42 +113,39 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     zIndex: 9999,
+    alignItems: 'center',
   },
   banner: {
-    backgroundColor: '#0E1322',
-    borderRadius: 16,
-    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.96)',
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.4)',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 10,
-    maxWidth: 600,
-    alignSelf: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    maxWidth: 500,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 12,
+    gap: 12,
   },
   iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  icon: {
-    fontSize: 18,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    color: '#F8FAFC',
-    fontSize: 14,
+    color: '#FFF',
+    fontSize: 13,
     fontWeight: '800',
     marginBottom: 2,
   },
@@ -153,12 +156,5 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 6,
-    marginLeft: 8,
-  },
-  closeText: {
-    color: '#A5B4FC',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });
-

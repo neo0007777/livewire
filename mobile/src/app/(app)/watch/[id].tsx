@@ -20,6 +20,7 @@ import { useChat } from '../../../hooks/useChat';
 import { usePresenceCount } from '../../../hooks/usePresenceCount';
 import { supabase } from '../../../lib/supabase';
 import { getStreamCategory, cleanStreamTitle } from '../../../lib/categories';
+import { CloseIcon, MonitorIcon, CheckIcon } from '../../../components/Icons';
 
 export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -198,7 +199,7 @@ export default function WatchScreen() {
             {/* Top Bar with Stream Info & Controls */}
             <View style={styles.topBar}>
               <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-                <Text style={styles.backIcon}>✕</Text>
+                <CloseIcon size={14} color="#FFF" />
               </TouchableOpacity>
 
               <View style={styles.creatorAvatarCircle}>
@@ -216,11 +217,11 @@ export default function WatchScreen() {
                     {streamInfo?.creator?.display_name || 'Creator'}
                   </Text>
                   <View style={styles.verifiedDot}>
-                    <Text style={styles.verifiedDotText}>✓</Text>
+                    <CheckIcon size={8} color="#38BDF8" />
                   </View>
                   {getStreamCategory(streamInfo?.title) && (
                     <Text style={styles.categoryPillHeader}>
-                      {getStreamCategory(streamInfo?.title)?.icon} {getStreamCategory(streamInfo?.title)?.badge}
+                      {getStreamCategory(streamInfo?.title)?.badge}
                     </Text>
                   )}
                 </View>
@@ -234,7 +235,7 @@ export default function WatchScreen() {
                     activeOpacity={0.8}
                   >
                     <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
-                      {isFollowing ? '✓ Following' : '+ Follow'}
+                      {isFollowing ? 'Following' : '+ Follow'}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -246,7 +247,9 @@ export default function WatchScreen() {
             {isEnded && (
               <View style={styles.endedOverlay}>
                 <View style={styles.endedCard}>
-                  <Text style={styles.endedIcon}>📺</Text>
+                  <View style={styles.endedIconWrap}>
+                    <MonitorIcon size={32} color="#818CF8" />
+                  </View>
                   <Text style={styles.endedTitle}>This stream has ended</Text>
                   <Text style={styles.endedSubtitle}>
                     Thank you for tuning in! The broadcaster has concluded this live event.
@@ -256,7 +259,7 @@ export default function WatchScreen() {
                     onPress={() => router.replace(`/(app)/summary/${streamId}`)}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.summaryLinkText}>📊 View Stream Recap & Highlights</Text>
+                    <Text style={styles.summaryLinkText}>View Stream Recap & Highlights</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.homeLinkButton}
@@ -450,6 +453,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     maxWidth: 400,
     width: '100%',
+  },
+  endedIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   endedIcon: {
     fontSize: 52,

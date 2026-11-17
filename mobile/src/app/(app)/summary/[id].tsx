@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { cleanStreamTitle, getStreamCategory } from '../../../lib/categories';
+import { EyeIcon, UserIcon, BroadcastIcon, MonitorIcon } from '../../../components/Icons';
 
 export default function StreamSummaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -74,7 +75,7 @@ export default function StreamSummaryScreen() {
         {getStreamCategory(stream?.title) && (
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryBadgeText}>
-              {getStreamCategory(stream?.title)?.icon} {getStreamCategory(stream?.title)?.badge}
+              {getStreamCategory(stream?.title)?.badge}
             </Text>
           </View>
         )}
@@ -91,19 +92,25 @@ export default function StreamSummaryScreen() {
       {/* 4 Metric Cards */}
       <View style={styles.statsGrid}>
         <View style={styles.statBox}>
-          <Text style={styles.statIcon}>👥</Text>
+          <View style={styles.iconWrap}>
+            <EyeIcon size={18} color="#818CF8" />
+          </View>
           <Text style={styles.statValue}>{stream?.peak_viewers ?? 0}</Text>
-          <Text style={styles.statLabel}>Peak Concurrent Viewers</Text>
+          <Text style={styles.statLabel}>Peak Viewers</Text>
         </View>
 
         <View style={styles.statBox}>
-          <Text style={styles.statIcon}>⏱️</Text>
+          <View style={styles.iconWrap}>
+            <BroadcastIcon size={18} color="#22C55E" />
+          </View>
           <Text style={styles.statValue}>{durationMins}m</Text>
           <Text style={styles.statLabel}>Total Air Time</Text>
         </View>
 
         <View style={styles.statBox}>
-          <Text style={styles.statIcon}>👑</Text>
+          <View style={styles.iconWrap}>
+            <UserIcon size={18} color="#A78BFA" />
+          </View>
           <Text style={styles.statValue} numberOfLines={1}>
             {stream?.creator?.display_name || 'Broadcaster'}
           </Text>
@@ -111,7 +118,9 @@ export default function StreamSummaryScreen() {
         </View>
 
         <View style={styles.statBox}>
-          <Text style={styles.statIcon}>⚡</Text>
+          <View style={styles.iconWrap}>
+            <MonitorIcon size={18} color="#38BDF8" />
+          </View>
           <Text style={styles.statValue}>100%</Text>
           <Text style={styles.statLabel}>Broadcast Uptime</Text>
         </View>
@@ -121,7 +130,9 @@ export default function StreamSummaryScreen() {
       <View style={styles.highlightsCard}>
         <View style={styles.highlightsHeader}>
           <View style={styles.aiBadgeTitle}>
-            <Text style={styles.aiEmoji}>🤖</Text>
+            <View style={styles.aiIconWrap}>
+              <MonitorIcon size={15} color="#818CF8" />
+            </View>
             <Text style={styles.highlightsTitle}>AI Stream Highlights</Text>
           </View>
           {highlights?.summary_source && (
@@ -257,9 +268,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  statIcon: {
-    fontSize: 22,
-    marginBottom: 8,
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   statValue: {
     fontSize: 20,
@@ -289,10 +305,15 @@ const styles = StyleSheet.create({
   aiBadgeTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  aiEmoji: {
-    fontSize: 18,
+  aiIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   highlightsTitle: {
     fontSize: 15,

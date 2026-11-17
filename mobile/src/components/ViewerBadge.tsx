@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { EyeIcon } from './Icons';
 
 interface ViewerBadgeProps {
   count: number;
@@ -17,9 +18,7 @@ export function ViewerBadge({ count, size = 'md' }: ViewerBadgeProps) {
 
   return (
     <View style={[styles.badge, isSmall && styles.badgeSm]}>
-      <View style={styles.liveIndicator}>
-        <View style={styles.dotPulse} />
-      </View>
+      <EyeIcon size={isSmall ? 12 : 14} color="#CBD5E1" />
       <Text style={[styles.text, isSmall && styles.textSm]}>
         {formatCount(count)} {count === 1 ? 'viewer' : 'viewers'}
       </Text>
@@ -32,28 +31,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    paddingHorizontal: 11,
+    paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
+    gap: 6,
     backdropFilter: 'blur(8px)',
   } as any,
   badgeSm: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 14,
-  },
-  liveIndicator: {
-    marginRight: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dotPulse: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    gap: 5,
   },
   text: {
     color: '#F8FAFC',

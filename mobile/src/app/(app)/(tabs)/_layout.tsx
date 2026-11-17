@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useInbox } from '../../../hooks/useInbox';
+import { MonitorIcon, BroadcastIcon, BellIcon, UserIcon } from '../../../components/Icons';
 
 export default function TabLayout() {
   const { unreadCount } = useInbox();
@@ -13,7 +14,7 @@ export default function TabLayout() {
           backgroundColor: '#0A0D18',
           borderTopColor: 'rgba(255, 255, 255, 0.07)',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 68,
+          height: Platform.OS === 'ios' ? 88 : 66,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
           paddingTop: 8,
           elevation: 20,
@@ -38,7 +39,7 @@ export default function TabLayout() {
           tabBarLabel: 'Live',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>📺</Text>
+              <MonitorIcon size={19} color={focused ? '#818CF8' : '#64748B'} />
               {focused && <View style={styles.activeDot} />}
             </View>
           ),
@@ -55,8 +56,7 @@ export default function TabLayout() {
           ),
           tabBarIcon: ({ focused }) => (
             <View style={[styles.goLiveBtn, focused && styles.goLiveBtnFocused]}>
-              <View style={styles.livePulseInner} />
-              <Text style={styles.goLiveIcon}>🔴</Text>
+              <BroadcastIcon size={16} color={focused ? '#FFFFFF' : '#EF4444'} />
             </View>
           ),
         }}
@@ -64,8 +64,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
-          title: 'Inbox',
-          tabBarLabel: 'Inbox',
+          title: 'Activity',
+          tabBarLabel: 'Activity',
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: '#EF4444',
@@ -79,7 +79,7 @@ export default function TabLayout() {
           },
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>🔔</Text>
+              <BellIcon size={19} color={focused ? '#818CF8' : '#64748B'} />
               {focused && <View style={styles.activeDot} />}
             </View>
           ),
@@ -92,7 +92,7 @@ export default function TabLayout() {
           tabBarLabel: 'Profile',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>👤</Text>
+              <UserIcon size={19} color={focused ? '#818CF8' : '#64748B'} />
               {focused && <View style={styles.activeDot} />}
             </View>
           ),
@@ -106,15 +106,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 32,
-  },
-  tabEmoji: {
-    fontSize: 20,
-    opacity: 0.65,
-  },
-  tabEmojiFocused: {
-    opacity: 1,
-    transform: [{ scale: 1.1 }],
+    height: 30,
   },
   activeDot: {
     width: 4,
@@ -125,10 +117,10 @@ const styles = StyleSheet.create({
     bottom: -4,
   },
   goLiveBtn: {
-    width: 46,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    width: 44,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderWidth: 1.5,
     borderColor: '#EF4444',
     alignItems: 'center',
@@ -139,15 +131,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     borderColor: '#F87171',
     transform: [{ scale: 1.05 }],
-  },
-  livePulseInner: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-  },
-  goLiveIcon: {
-    fontSize: 12,
   },
   goLiveLabel: {
     fontSize: 11,

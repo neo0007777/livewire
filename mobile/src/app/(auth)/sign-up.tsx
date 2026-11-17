@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { Link } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { BroadcastIcon } from '../../components/Icons';
 
 export default function SignUpScreen() {
   const [displayName, setDisplayName] = useState('');
@@ -36,7 +37,7 @@ export default function SignUpScreen() {
         {/* Brand Header */}
         <View style={styles.brandRow}>
           <View style={styles.logoBadge}>
-            <Text style={styles.logoIcon}>⚡</Text>
+            <BroadcastIcon size={20} color="#EF4444" />
           </View>
           <View>
             <Text style={styles.brandTitle}>LIVEWIRE</Text>

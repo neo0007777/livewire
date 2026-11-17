@@ -10,48 +10,48 @@ export interface StreamCategory {
 export const STREAM_CATEGORIES: StreamCategory[] = [
   {
     id: 'gaming',
-    label: '🎮 Gaming',
+    label: 'Gaming',
     tag: '[Gaming]',
     badge: 'Gaming',
-    icon: '🎮',
+    icon: '●',
     keywords: ['gaming', 'game', 'play', 'minecraft', 'valorant', 'gta', 'fortnite', 'esports', 'apex', 'roblox', 'cod'],
   },
   {
     id: 'tech',
-    label: '💻 Tech & Dev',
+    label: 'Tech & Dev',
     tag: '[Tech]',
     badge: 'Tech & Dev',
-    icon: '💻',
+    icon: '●',
     keywords: ['tech', 'coding', 'code', 'dev', 'developer', 'ai', 'software', 'programming', 'python', 'react', 'web', 'agent'],
   },
   {
     id: 'chat',
-    label: '💬 Just Chatting',
+    label: 'Just Chatting',
     tag: '[Chat]',
     badge: 'Just Chatting',
-    icon: '💬',
+    icon: '●',
     keywords: ['chat', 'just chatting', 'q&a', 'talk', 'chill', 'irl', 'discussion', 'podcast'],
   },
   {
     id: 'music',
-    label: '🎵 Music & Audio',
+    label: 'Music & Audio',
     tag: '[Music]',
     badge: 'Music',
-    icon: '🎵',
+    icon: '●',
     keywords: ['music', 'song', 'guitar', 'piano', 'beats', 'audio', 'dj', 'singing', 'lofi'],
   },
   {
     id: 'creative',
-    label: '🎨 Creative & Design',
+    label: 'Creative & Design',
     tag: '[Creative]',
     badge: 'Creative',
-    icon: '🎨',
+    icon: '●',
     keywords: ['creative', 'design', 'art', 'draw', 'drawing', 'figma', 'ui', 'ux', '3d', 'animation', 'blender'],
   },
 ];
 
 export const FILTER_CATEGORIES = [
-  { id: 'all', label: '🔥 All Streams', icon: '🔥' },
+  { id: 'all', label: 'All Streams', icon: '●' },
   ...STREAM_CATEGORIES.map((c) => ({ id: c.id, label: c.label, icon: c.icon })),
 ];
 
@@ -82,4 +82,3 @@ export function cleanStreamTitle(title: string | undefined): string {
   if (!title) return '';
   return title.replace(/^\[(Gaming|Tech|Chat|Music|Creative|Live)\]\s*/i, '').trim() || title;
 }
-

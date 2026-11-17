@@ -14,6 +14,13 @@ import { LiveKitWrapper } from '../../../components/LiveKitWrapper';
 import { LocalPreview } from '../../../components/LocalPreview';
 import { ViewerBadge } from '../../../components/ViewerBadge';
 import { ChatPanel } from '../../../components/ChatPanel';
+import {
+  MicIcon,
+  MicMutedIcon,
+  VideoCameraIcon,
+  VideoCameraOffIcon,
+  FlipCameraIcon,
+} from '../../../components/Icons';
 import { endStream, fetchLiveKitToken, LiveKitTokenResponse } from '../../../lib/streams';
 import { useSessionStore } from '../../../stores/session';
 import { useStreamChannel } from '../../../hooks/useStreamChannel';
@@ -196,7 +203,7 @@ export default function BroadcastScreen() {
               facingMode={facingMode}
             />
 
-            {/* Top Control Bar with Integrated Media Toolbar */}
+            {/* Top Control Bar with Status & Controls */}
             <View style={styles.topBar}>
               {/* Row 1: Live Status, Viewers, Quality, End Stream */}
               <View style={styles.headerRow1}>
@@ -209,7 +216,7 @@ export default function BroadcastScreen() {
                   <ViewerBadge count={viewerCount} />
 
                   <View style={styles.streamQualityPill}>
-                    <Text style={styles.streamQualityText}>⚡ 1080p</Text>
+                    <Text style={styles.streamQualityText}>1080p HD</Text>
                   </View>
                 </View>
 
@@ -225,17 +232,29 @@ export default function BroadcastScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Row 2: Broadcaster Media Hardware Controls (Mic, Camera, Flip) */}
+              {/* Row 2: Broadcaster Media Controls Toolbar */}
               <View style={styles.controlsRow}>
-                {/* Mic Toggle */}
+                {/* Mic Toggle Button */}
                 <TouchableOpacity
-                  style={[styles.mediaBtn, isMicMuted ? styles.mediaBtnMuted : styles.mediaBtnActive]}
+                  style={[
+                    styles.mediaBtn,
+                    isMicMuted ? styles.mediaBtnMuted : styles.mediaBtnActive,
+                  ]}
                   onPress={toggleMic}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.mediaBtnIcon}>{isMicMuted ? '🔇' : '🎙️'}</Text>
-                  <Text style={[styles.mediaBtnText, isMicMuted && styles.mediaBtnTextMuted]}>
-                    {isMicMuted ? 'Mic Muted' : 'Mic On'}
+                  {isMicMuted ? (
+                    <MicMutedIcon size={15} color="#EF4444" />
+                  ) : (
+                    <MicIcon size={15} color="#22C55E" />
+                  )}
+                  <Text
+                    style={[
+                      styles.mediaBtnText,
+                      isMicMuted && styles.mediaBtnTextMuted,
+                    ]}
+                  >
+                    {isMicMuted ? 'Mic Muted' : 'Mic Active'}
                   </Text>
                   <View
                     style={[
@@ -245,15 +264,27 @@ export default function BroadcastScreen() {
                   />
                 </TouchableOpacity>
 
-                {/* Video Camera Toggle */}
+                {/* Video Camera Toggle Button */}
                 <TouchableOpacity
-                  style={[styles.mediaBtn, isVideoMuted ? styles.mediaBtnMuted : styles.mediaBtnActive]}
+                  style={[
+                    styles.mediaBtn,
+                    isVideoMuted ? styles.mediaBtnMuted : styles.mediaBtnActive,
+                  ]}
                   onPress={toggleVideo}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.mediaBtnIcon}>{isVideoMuted ? '🚫' : '📹'}</Text>
-                  <Text style={[styles.mediaBtnText, isVideoMuted && styles.mediaBtnTextMuted]}>
-                    {isVideoMuted ? 'Camera Off' : 'Camera On'}
+                  {isVideoMuted ? (
+                    <VideoCameraOffIcon size={15} color="#EF4444" />
+                  ) : (
+                    <VideoCameraIcon size={15} color="#22C55E" />
+                  )}
+                  <Text
+                    style={[
+                      styles.mediaBtnText,
+                      isVideoMuted && styles.mediaBtnTextMuted,
+                    ]}
+                  >
+                    {isVideoMuted ? 'Camera Off' : 'Camera Active'}
                   </Text>
                   <View
                     style={[
@@ -263,13 +294,13 @@ export default function BroadcastScreen() {
                   />
                 </TouchableOpacity>
 
-                {/* Flip Camera */}
+                {/* Flip Camera Button */}
                 <TouchableOpacity
                   style={styles.mediaBtn}
                   onPress={flipCamera}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.mediaBtnIcon}>🔄</Text>
+                  <FlipCameraIcon size={15} color="#CBD5E1" />
                   <Text style={styles.mediaBtnText}>Flip Cam</Text>
                 </TouchableOpacity>
               </View>
@@ -315,22 +346,22 @@ const styles = StyleSheet.create({
   },
   topBar: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 52 : 36,
+    top: Platform.OS === 'ios' ? 52 : 24,
     left: 14,
     right: 14,
-    zIndex: 50,
-    backgroundColor: 'rgba(10, 14, 26, 0.88)',
-    borderRadius: 20,
+    zIndex: 100,
+    backgroundColor: 'rgba(10, 14, 26, 0.92)',
+    borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 12,
   },
   headerRow1: {
     flexDirection: 'row',
@@ -349,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 14,
+    borderRadius: 12,
     gap: 5,
   },
   liveDot: {
@@ -365,24 +396,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   streamQualityPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   streamQualityText: {
     color: '#CBD5E1',
     fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   endButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.95)',
+    backgroundColor: '#EF4444',
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
     shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 4,
   },
@@ -395,6 +427,7 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
     width: '100%',
     paddingTop: 8,
@@ -404,24 +437,21 @@ const styles = StyleSheet.create({
   mediaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 14,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    gap: 5,
+    gap: 6,
   },
   mediaBtnActive: {
     backgroundColor: 'rgba(34, 197, 94, 0.12)',
-    borderColor: 'rgba(34, 197, 94, 0.35)',
+    borderColor: 'rgba(34, 197, 94, 0.3)',
   },
   mediaBtnMuted: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderColor: '#EF4444',
-  },
-  mediaBtnIcon: {
-    fontSize: 13,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.4)',
   },
   mediaBtnText: {
     color: '#F8FAFC',

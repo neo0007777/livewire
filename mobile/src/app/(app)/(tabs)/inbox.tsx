@@ -1,6 +1,7 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInbox, AppNotification } from '../../../hooks/useInbox';
+import { BroadcastIcon, UserIcon, EyeIcon, MonitorIcon, BellIcon } from '../../../components/Icons';
 
 export default function InboxScreen() {
   const router = useRouter();
@@ -17,18 +18,38 @@ export default function InboxScreen() {
     }
   };
 
-  const getIconInfo = (type: string) => {
+  const renderIcon = (type: string) => {
     switch (type) {
       case 'stream_live':
-        return { emoji: '🔴', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
+        return (
+          <View style={[styles.iconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.35)' }]}>
+            <BroadcastIcon size={18} color="#EF4444" />
+          </View>
+        );
       case 'new_follower':
-        return { emoji: '👤', bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.3)' };
+        return (
+          <View style={[styles.iconCircle, { backgroundColor: 'rgba(99, 102, 241, 0.15)', borderColor: 'rgba(99, 102, 241, 0.35)' }]}>
+            <UserIcon size={18} color="#818CF8" />
+          </View>
+        );
       case 'viewer_milestone':
-        return { emoji: '🏆', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
+        return (
+          <View style={[styles.iconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
+            <EyeIcon size={18} color="#F59E0B" />
+          </View>
+        );
       case 'highlights_ready':
-        return { emoji: '🎬', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
+        return (
+          <View style={[styles.iconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderColor: 'rgba(59, 130, 246, 0.35)' }]}>
+            <MonitorIcon size={18} color="#3B82F6" />
+          </View>
+        );
       default:
-        return { emoji: '🔔', bg: 'rgba(100, 116, 139, 0.15)', border: 'rgba(100, 116, 139, 0.3)' };
+        return (
+          <View style={[styles.iconCircle, { backgroundColor: 'rgba(100, 116, 139, 0.15)', borderColor: 'rgba(100, 116, 139, 0.35)' }]}>
+            <BellIcon size={18} color="#94A3B8" />
+          </View>
+        );
     }
   };
 
@@ -62,7 +83,6 @@ export default function InboxScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#818CF8" />}
         contentContainerStyle={notifications.length === 0 ? styles.emptyList : styles.list}
         renderItem={({ item }) => {
-          const { emoji, bg, border } = getIconInfo(item.type);
           const isUnread = !item.read_at;
 
           return (
@@ -71,9 +91,7 @@ export default function InboxScreen() {
               onPress={() => handleNotificationPress(item)}
               activeOpacity={0.8}
             >
-              <View style={[styles.iconCircle, { backgroundColor: bg, borderColor: border }]}>
-                <Text style={styles.icon}>{emoji}</Text>
-              </View>
+              {renderIcon(item.type)}
 
               <View style={styles.cardContent}>
                 <View style={styles.titleRow}>
@@ -94,12 +112,12 @@ export default function InboxScreen() {
           !loading ? (
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconCircle}>
-                <Text style={styles.emptyIcon}>🔔</Text>
+                <BellIcon size={32} color="#818CF8" />
               </View>
-              <Text style={styles.emptyTitle}>All Caught Up!</Text>
+              <Text style={styles.emptyTitle}>All Caught Up</Text>
               <Text style={styles.emptySubtitle}>
                 You will be notified when creators you follow start streaming, when viewers follow you,
-                or when AI highlights are ready.
+                or when highlights are ready.
               </Text>
             </View>
           ) : undefined
@@ -179,9 +197,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  icon: {
-    fontSize: 20,
-  },
   cardContent: {
     flex: 1,
   },
@@ -231,9 +246,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  emptyIcon: {
-    fontSize: 36,
   },
   emptyTitle: {
     fontSize: 18,

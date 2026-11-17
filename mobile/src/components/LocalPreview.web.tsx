@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { VideoCameraOffIcon, VideoCameraIcon, MicMutedIcon } from './Icons';
 
 interface LocalPreviewProps {
   channel?: any;
@@ -268,7 +269,7 @@ export function LocalPreview({
       {hasPermission && isVideoMuted && (
         <View style={styles.videoMutedOverlay}>
           <View style={styles.videoMutedCircle}>
-            <Text style={styles.videoMutedEmoji}>🚫</Text>
+            <VideoCameraOffIcon size={36} color="#EF4444" />
           </View>
           <Text style={styles.videoMutedTitle}>Camera is Paused</Text>
           <Text style={styles.videoMutedSubtitle}>Your video feed is hidden from all viewers</Text>
@@ -278,13 +279,16 @@ export function LocalPreview({
       {/* Mic Muted floating alert */}
       {hasPermission && isMicMuted && (
         <View style={styles.micMutedAlert}>
-          <Text style={styles.micMutedAlertText}>🔇 Microphone Muted</Text>
+          <MicMutedIcon size={12} color="#FFF" />
+          <Text style={styles.micMutedAlertText}>Microphone Muted</Text>
         </View>
       )}
 
       {hasPermission === false && (
         <View style={styles.fallbackContainer}>
-          <Text style={styles.icon}>📷</Text>
+          <View style={styles.fallbackIconCircle}>
+            <VideoCameraIcon size={32} color="#94A3B8" />
+          </View>
           <Text style={styles.text}>{errorMsg || 'Camera unavailable'}</Text>
           <Text style={styles.subtext}>Please grant camera permission in your browser URL bar</Text>
         </View>
@@ -347,6 +351,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 16,
     zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   micMutedAlertText: {
     color: '#FFF',
@@ -361,8 +368,14 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 24,
   },
-  icon: {
-    fontSize: 48,
+  fallbackIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   text: {
     color: '#F3F4F6',

@@ -13,6 +13,12 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { startStream } from '../../../lib/streams';
 import { STREAM_CATEGORIES, StreamCategory } from '../../../lib/categories';
+import {
+  VideoCameraIcon,
+  MicIcon,
+  BroadcastIcon,
+  BellIcon,
+} from '../../../components/Icons';
 
 export default function GoLiveScreen() {
   const router = useRouter();
@@ -24,7 +30,7 @@ export default function GoLiveScreen() {
 
   const handleStartBroadcast = async () => {
     if (!title.trim()) {
-      Alert.alert('Stream Title Required', 'Please enter a catchy title for your live stream.');
+      Alert.alert('Stream Title Required', 'Please enter a title for your live stream.');
       return;
     }
 
@@ -58,26 +64,41 @@ export default function GoLiveScreen() {
       {/* Hardware & Network Status Cards */}
       <View style={styles.hardwareGrid}>
         <View style={styles.hwCard}>
-          <Text style={styles.hwIcon}>📹</Text>
+          <View style={styles.hwIconWrap}>
+            <VideoCameraIcon size={16} color="#22C55E" />
+          </View>
           <View>
-            <Text style={styles.hwTitle}>Camera</Text>
-            <Text style={styles.hwStatus}>🟢 1080p Ready</Text>
+            <Text style={styles.hwTitle}>Camera Input</Text>
+            <View style={styles.statusRow}>
+              <View style={styles.dotActive} />
+              <Text style={styles.hwStatus}>1080p Ready</Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.hwCard}>
-          <Text style={styles.hwIcon}>🎙️</Text>
+          <View style={styles.hwIconWrap}>
+            <MicIcon size={16} color="#22C55E" />
+          </View>
           <View>
             <Text style={styles.hwTitle}>Microphone</Text>
-            <Text style={styles.hwStatus}>🟢 Stereo Input</Text>
+            <View style={styles.statusRow}>
+              <View style={styles.dotActive} />
+              <Text style={styles.hwStatus}>Stereo Ready</Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.hwCard}>
-          <Text style={styles.hwIcon}>⚡</Text>
+          <View style={styles.hwIconWrap}>
+            <BroadcastIcon size={16} color="#22C55E" />
+          </View>
           <View>
             <Text style={styles.hwTitle}>Latency</Text>
-            <Text style={styles.hwStatus}>⚡ Sub-Second</Text>
+            <View style={styles.statusRow}>
+              <View style={styles.dotActive} />
+              <Text style={styles.hwStatus}>Ultra-Low</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -92,7 +113,7 @@ export default function GoLiveScreen() {
 
         <TextInput
           style={styles.textInput}
-          placeholder="e.g. Building an Autonomous AI Swarm from Scratch 🚀"
+          placeholder="e.g. Building an Autonomous Real-Time Stream Platform"
           placeholderTextColor="#475569"
           value={title}
           onChangeText={setTitle}
@@ -119,13 +140,15 @@ export default function GoLiveScreen() {
           })}
         </View>
 
-        {/* Notification Perks Alert */}
+        {/* Notification Alert Info */}
         <View style={styles.perkBox}>
-          <Text style={styles.perkIcon}>🔔</Text>
+          <View style={styles.perkIconWrap}>
+            <BellIcon size={18} color="#818CF8" />
+          </View>
           <View style={styles.perkContent}>
             <Text style={styles.perkTitle}>Instant Audience Dispatch</Text>
             <Text style={styles.perkDescription}>
-              All of your followers will be alerted in real-time the moment you click Start Broadcast.
+              All of your followers will be alerted in real-time the moment you start broadcasting.
             </Text>
           </View>
         </View>
@@ -211,19 +234,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  hwIcon: {
-    fontSize: 22,
+  hwIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   hwTitle: {
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '600',
   },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  dotActive: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22C55E',
+  },
   hwStatus: {
     fontSize: 11,
     color: '#34D399',
     fontWeight: '700',
-    marginTop: 2,
   },
   formCard: {
     backgroundColor: '#0E1322',
@@ -303,8 +342,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  perkIcon: {
-    fontSize: 22,
+  perkIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   perkContent: {
     flex: 1,

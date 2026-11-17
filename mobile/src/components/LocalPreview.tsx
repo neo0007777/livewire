@@ -3,6 +3,7 @@ import { View, StyleSheet, Text } from 'react-native';
 import { useTracks } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import { VideoTrack } from '@livekit/react-native';
+import { VideoCameraOffIcon } from './Icons';
 
 interface LocalPreviewProps {
   channel?: any;
@@ -20,7 +21,7 @@ export function LocalPreview({ isVideoMuted = false }: LocalPreviewProps) {
     return (
       <View style={styles.videoMutedOverlay}>
         <View style={styles.videoMutedCircle}>
-          <Text style={styles.videoMutedEmoji}>🚫</Text>
+          <VideoCameraOffIcon size={36} color="#EF4444" />
         </View>
         <Text style={styles.videoMutedTitle}>Camera is Paused</Text>
         <Text style={styles.videoMutedSubtitle}>Your video feed is hidden from all viewers</Text>
