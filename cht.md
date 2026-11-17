@@ -506,3 +506,13 @@
 - Verified completion of EAS Cloud Build #9 (`09688fe0-aea4-4dda-9f47-90e206bce03a`): status transitioned to `FINISHED` (exit code 0).
 - Extracted and verified production universal APK artifact: `https://expo.dev/artifacts/eas/j83x5g3tavK9wTmsrrwD-2N5KJZiO5MdWG6A-dpblpE.apk`.
 - Updated submission documentation (`README.md`, `BUILD_LOG.md`) to index the verified Build #9 release.
+
+### Turn 35: Database Stream Lifecycle State Sanitization & Broadcast Termination
+**User:**
+> "close all the streams"
+
+**Action Taken:**
+- Inspected active broadcast sessions across the platform via Supabase database RPCs.
+- Identified lingering stream session (`edb9de0b-48ee-452b-b6e9-c4e4fc2ec2bd`: `[Tech] Lol`) created by creator `cdsc`.
+- Invoked `end_stream` security-definer RPC function to atomically terminate the active broadcast, transition status to `'ended'`, set `ended_at` timestamp, reset `current_viewers` to 0, and generate stream highlight analytics.
+- Verified platform-wide live stream count is reset to 0.
