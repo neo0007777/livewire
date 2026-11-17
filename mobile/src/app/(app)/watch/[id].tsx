@@ -95,7 +95,7 @@ export default function WatchScreen() {
             .select('*')
             .eq('follower_id', session.user.id)
             .eq('creator_id', data.creator_id)
-            .single()
+            .maybeSingle()
             .then(({ data: followData }) => {
               setIsFollowing(!!followData);
             });
@@ -108,37 +108,48 @@ export default function WatchScreen() {
     if (!streamInfo?.creator_id || !session?.user?.id) return;
     if (session.user.id === streamInfo.creator_id) return; // Cannot follow yourself
 
-    if (isFollowing) {
-      setIsFollowing(false);
-      await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', session.user.id)
-        .eq('creator_id', streamInfo.creator_id);
-    } else {
-      setIsFollowing(true);
-      const { error } = await supabase.from('follows').insert({
-        follower_id: session.user.id,
-        creator_id: streamInfo.creator_id,
+    const nextState = !isFollowing;
+    setIsFollowing(nextState);
+
+    try {
+      // 1. Try atomic RPC
+      const { data, error } = await supabase.rpc('toggle_follow', {
+        p_creator_id: streamInfo.creator_id,
       });
 
-      if (!error) {
-        try {
-          const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: streamInfo.creator_id,
-              type: 'new_follower',
-              title: 'New Follower!',
-              body: `${myName} started following you.`,
-              data: { follower_id: session.user.id },
-              dedupe_key: `follow:${session.user.id}:${streamInfo.creator_id}:${Date.now()}`,
-            });
-        } catch (notifErr) {
-          // Best-effort notification delivery
-        }
+      if (!error && data && typeof data.is_following === 'boolean') {
+        setIsFollowing(data.is_following);
+        return;
       }
+
+      // 2. Direct fallback
+      if (!nextState) {
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', session.user.id)
+          .eq('creator_id', streamInfo.creator_id);
+      } else {
+        await supabase.from('follows').upsert(
+          {
+            follower_id: session.user.id,
+            creator_id: streamInfo.creator_id,
+          },
+          { onConflict: 'follower_id,creator_id' }
+        );
+
+        const myName = profile?.display_name || session.user.email?.split('@')[0] || 'Someone';
+        await supabase.from('notifications').insert({
+          user_id: streamInfo.creator_id,
+          type: 'new_follower',
+          title: 'New Follower!',
+          body: `${myName} started following you.`,
+          data: { follower_id: session.user.id },
+          dedupe_key: `follow:${session.user.id}:${streamInfo.creator_id}:${Date.now()}`,
+        });
+      }
+    } catch (err) {
+      console.log('Follow toggle error:', err);
     }
   };
 
@@ -228,7 +239,11 @@ export default function WatchScreen() {
               </View>
 
               <View style={styles.rightActions}>
-                {session?.user?.id !== streamInfo?.creator_id && (
+                {session?.user?.id === streamInfo?.creator_id ? (
+                  <View style={styles.hostBadge}>
+                    <Text style={styles.hostBadgeText}>You (Host)</Text>
+                  </View>
+                ) : (
                   <TouchableOpacity
                     style={[styles.followButton, isFollowing && styles.followingButton]}
                     onPress={toggleFollow}
@@ -428,6 +443,19 @@ const styles = StyleSheet.create({
   },
   followingButtonText: {
     color: '#CBD5E1',
+  },
+  hostBadge: {
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  hostBadgeText: {
+    color: '#A5B4FC',
+    fontSize: 11,
+    fontWeight: '800',
   },
   chatOverlay: {
     position: 'absolute',
