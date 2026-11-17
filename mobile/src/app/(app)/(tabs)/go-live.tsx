@@ -94,7 +94,10 @@ export default function GoLiveScreen() {
       style={styles.container}
       contentContainerStyle={[
         styles.contentContainer,
-        { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24) },
+        {
+          paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 56 : 24),
+          paddingBottom: Math.max(80, insets.bottom + 64),
+        },
       ]}
       keyboardShouldPersistTaps="handled"
     >
@@ -119,7 +122,7 @@ export default function GoLiveScreen() {
           </View>
           <View style={styles.accountDetails}>
             <Text style={styles.accountLabel}>CURRENT BROADCASTER</Text>
-            <Text style={styles.accountTitle}>
+            <Text style={styles.accountTitle} numberOfLines={1}>
               {profile?.display_name || currentEmail.split('@')[0] || 'Broadcaster'}{' '}
               <Text style={styles.accountEmail}>({currentEmail})</Text>
             </Text>
@@ -142,12 +145,10 @@ export default function GoLiveScreen() {
           <View style={styles.hwIconWrap}>
             <VideoCameraIcon size={16} color="#22C55E" />
           </View>
-          <View>
-            <Text style={styles.hwTitle}>Camera Input</Text>
-            <View style={styles.statusRow}>
-              <View style={styles.dotActive} />
-              <Text style={styles.hwStatus}>1080p Ready</Text>
-            </View>
+          <Text style={styles.hwTitle} numberOfLines={1}>Camera</Text>
+          <View style={styles.statusRow}>
+            <View style={styles.dotActive} />
+            <Text style={styles.hwStatus} numberOfLines={1}>1080p HD</Text>
           </View>
         </View>
 
@@ -155,12 +156,10 @@ export default function GoLiveScreen() {
           <View style={styles.hwIconWrap}>
             <MicIcon size={16} color="#22C55E" />
           </View>
-          <View>
-            <Text style={styles.hwTitle}>Microphone</Text>
-            <View style={styles.statusRow}>
-              <View style={styles.dotActive} />
-              <Text style={styles.hwStatus}>Stereo Ready</Text>
-            </View>
+          <Text style={styles.hwTitle} numberOfLines={1}>Audio</Text>
+          <View style={styles.statusRow}>
+            <View style={styles.dotActive} />
+            <Text style={styles.hwStatus} numberOfLines={1}>Stereo HD</Text>
           </View>
         </View>
 
@@ -168,12 +167,10 @@ export default function GoLiveScreen() {
           <View style={styles.hwIconWrap}>
             <BroadcastIcon size={16} color="#22C55E" />
           </View>
-          <View>
-            <Text style={styles.hwTitle}>Latency</Text>
-            <View style={styles.statusRow}>
-              <View style={styles.dotActive} />
-              <Text style={styles.hwStatus}>Ultra-Low</Text>
-            </View>
+          <Text style={styles.hwTitle} numberOfLines={1}>Latency</Text>
+          <View style={styles.statusRow}>
+            <View style={styles.dotActive} />
+            <Text style={styles.hwStatus} numberOfLines={1}>Ultra-Low</Text>
           </View>
         </View>
       </View>
@@ -326,6 +323,7 @@ const styles = StyleSheet.create({
   },
   accountDetails: {
     flex: 1,
+    minWidth: 0,
   },
   accountLabel: {
     color: '#818CF8',
@@ -351,6 +349,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
+    flexShrink: 0,
   },
   switchButtonText: {
     color: '#E2E8F0',
@@ -359,7 +358,7 @@ const styles = StyleSheet.create({
   },
   hardwareGrid: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     marginBottom: 20,
   },
   hwCard: {
@@ -368,40 +367,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 14,
-    padding: 12,
-    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
   },
   hwIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 6,
   },
   hwTitle: {
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 2,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginTop: 2,
+    justifyContent: 'center',
+    gap: 4,
   },
   dotActive: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#22C55E',
   },
   hwStatus: {
     fontSize: 11,
     color: '#34D399',
     fontWeight: '700',
+    textAlign: 'center',
   },
   formCard: {
     backgroundColor: '#0E1322',
