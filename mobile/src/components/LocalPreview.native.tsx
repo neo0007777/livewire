@@ -21,6 +21,13 @@ interface LocalPreviewProps {
   onScreenShareChange?: (isSharing: boolean) => void;
 }
 
+const STUN_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+];
+
 export function LocalPreview({
   channel,
   isVideoMuted = false,
@@ -32,6 +39,8 @@ export function LocalPreview({
   const [permissionDenied, setPermissionDenied] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const pendingIceRef = useRef<Map<string, RTCIceCandidate[]>>(new Map());
+  const peerCreationTimeRef = useRef<Map<string, number>>(new Map());
   const currentFacingRef = useRef<'user' | 'environment'>(facingMode);
 
   // Initialize native Camera & Microphone directly via WebRTC mediaDevices
@@ -50,50 +59,34 @@ export function LocalPreview({
       // Stop previous tracks to prevent hardware camera lock
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
 
       let stream: MediaStream | null = null;
-      try {
-        stream = (await mediaDevices.getUserMedia({
-          video: {
-            facingMode: facing,
-            width: 1280,
-            height: 720,
-            frameRate: 30,
-          },
-          audio: true,
-        })) as MediaStream;
-      } catch (err1) {
+      const constraintTiers = [
+        { video: { facingMode: facing, width: 1280, height: 720, frameRate: 30 }, audio: true },
+        { video: { facingMode: facing, width: 1280, height: 720, frameRate: 30 }, audio: false },
+        { video: { facingMode: facing, width: 640, height: 480, frameRate: 24 }, audio: true },
+        { video: { facingMode: facing, width: 640, height: 480, frameRate: 24 }, audio: false },
+        { video: { facingMode: facing }, audio: true },
+        { video: { facingMode: facing }, audio: false },
+        { video: true, audio: true },
+        { video: true, audio: false },
+      ];
+
+      for (const constraints of constraintTiers) {
         try {
-          stream = (await mediaDevices.getUserMedia({
-            video: {
-              facingMode: facing,
-              width: 640,
-              height: 480,
-              frameRate: 24,
-            },
-            audio: true,
-          })) as MediaStream;
-        } catch (err2) {
-          try {
-            stream = (await mediaDevices.getUserMedia({
-              video: { facingMode: facing },
-              audio: true,
-            })) as MediaStream;
-          } catch (err3) {
-            try {
-              stream = (await mediaDevices.getUserMedia({
-                video: true,
-                audio: true,
-              })) as MediaStream;
-            } catch (err4) {
-              stream = (await mediaDevices.getUserMedia({
-                video: true,
-                audio: false,
-              })) as MediaStream;
-            }
+          stream = (await mediaDevices.getUserMedia(constraints)) as MediaStream;
+          if (stream && stream.getVideoTracks().length > 0) {
+            break;
           }
+        } catch (e) {
+          // Attempt next resolution/audio tier
         }
+      }
+
+      if (!stream || stream.getVideoTracks().length === 0) {
+        throw new Error('Device camera hardware is unavailable');
       }
 
       // Apply initial mute states
@@ -125,6 +118,8 @@ export function LocalPreview({
       }
       peersRef.current.forEach((pc) => pc.close());
       peersRef.current.clear();
+      pendingIceRef.current.clear();
+      peerCreationTimeRef.current.clear();
     };
   }, []);
 
@@ -166,18 +161,30 @@ export function LocalPreview({
       const viewerId = payload?.viewerId;
       if (!viewerId) return;
 
-      if (peersRef.current.has(viewerId)) {
-        peersRef.current.get(viewerId)?.close();
+      const existingPc = peersRef.current.get(viewerId);
+      const createdTime = peerCreationTimeRef.current.get(viewerId) || 0;
+      const ageMs = Date.now() - createdTime;
+
+      // Avoid tearing down existing connection if already active or negotiating
+      if (existingPc) {
+        if (
+          existingPc.connectionState === 'connected' ||
+          existingPc.iceConnectionState === 'connected'
+        ) {
+          return;
+        }
+        if (existingPc.signalingState === 'have-local-offer' && ageMs < 4000) {
+          return;
+        }
+        existingPc.close();
         peersRef.current.delete(viewerId);
+        pendingIceRef.current.delete(viewerId);
       }
 
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      });
+      const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
       peersRef.current.set(viewerId, pc);
+      peerCreationTimeRef.current.set(viewerId, Date.now());
+      pendingIceRef.current.set(viewerId, []);
 
       localStream.getTracks().forEach((track) => {
         pc.addTrack(track, localStream);
@@ -212,6 +219,12 @@ export function LocalPreview({
       if (pc && payload?.answer) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
+          // Flush any pending ICE candidates received before answer
+          const pending = pendingIceRef.current.get(viewerId) || [];
+          for (const cand of pending) {
+            await pc.addIceCandidate(cand).catch(() => {});
+          }
+          pendingIceRef.current.set(viewerId, []);
         } catch (err) {
           console.warn('[LocalPreview.native] Error setting P2P remote description:', err);
         }
@@ -220,10 +233,18 @@ export function LocalPreview({
 
     const handleIce = async ({ payload }: any) => {
       if (payload?.targetId === 'creator' && payload?.candidate) {
-        const pc = peersRef.current.get(payload?.fromId);
+        const viewerId = payload?.fromId;
+        const pc = peersRef.current.get(viewerId);
         if (pc) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            const candidate = new RTCIceCandidate(payload.candidate);
+            if (pc.remoteDescription) {
+              await pc.addIceCandidate(candidate);
+            } else {
+              const pending = pendingIceRef.current.get(viewerId) || [];
+              pending.push(candidate);
+              pendingIceRef.current.set(viewerId, pending);
+            }
           } catch (err) {
             console.warn('[LocalPreview.native] Error adding P2P ICE candidate:', err);
           }
@@ -238,6 +259,8 @@ export function LocalPreview({
     return () => {
       peersRef.current.forEach((pc) => pc.close());
       peersRef.current.clear();
+      pendingIceRef.current.clear();
+      peerCreationTimeRef.current.clear();
     };
   }, [channel, localStream]);
 

@@ -2,7 +2,7 @@ import { PermissionsAndroid, Platform, Alert, Linking } from 'react-native';
 
 /**
  * Requests camera and microphone permissions required for live broadcasting on Android.
- * Returns true if both permissions are granted, false otherwise.
+ * Returns true if camera permission is granted (with best-effort microphone access).
  */
 export async function requestBroadcastPermissions(): Promise<boolean> {
   if (Platform.OS !== 'android') {
@@ -23,14 +23,12 @@ export async function requestBroadcastPermissions(): Promise<boolean> {
     ]);
 
     const cameraGranted =
-      granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED;
-    const audioGranted =
-      granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
+      hasCamera || granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED;
 
-    if (!cameraGranted || !audioGranted) {
+    if (!cameraGranted) {
       Alert.alert(
-        'Camera & Mic Permissions Required',
-        'LiveWire requires Camera and Microphone access to broadcast live video. Please grant permissions in your device settings to begin streaming.',
+        'Camera Permission Required',
+        'LiveWire requires Camera access to broadcast live video. Please grant permission in your device settings to begin streaming.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Open Settings', onPress: () => Linking.openSettings() },
@@ -45,4 +43,3 @@ export async function requestBroadcastPermissions(): Promise<boolean> {
     return false;
   }
 }
-

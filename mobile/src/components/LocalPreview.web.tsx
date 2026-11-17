@@ -25,6 +25,8 @@ export function LocalPreview({
   const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const pendingIceRef = useRef<Map<string, RTCIceCandidate[]>>(new Map());
+  const peerCreationTimeRef = useRef<Map<string, number>>(new Map());
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -280,18 +282,37 @@ export function LocalPreview({
       const viewerId = payload?.viewerId;
       if (!viewerId || !streamRef.current) return;
 
-      if (peersRef.current.has(viewerId)) {
-        peersRef.current.get(viewerId)?.close();
+      const existingPc = peersRef.current.get(viewerId);
+      const createdTime = peerCreationTimeRef.current.get(viewerId) || 0;
+      const ageMs = Date.now() - createdTime;
+
+      // Avoid tearing down existing connection if already active or negotiating
+      if (existingPc) {
+        if (
+          existingPc.connectionState === 'connected' ||
+          existingPc.iceConnectionState === 'connected'
+        ) {
+          return;
+        }
+        if (existingPc.signalingState === 'have-local-offer' && ageMs < 4000) {
+          return;
+        }
+        existingPc.close();
         peersRef.current.delete(viewerId);
+        pendingIceRef.current.delete(viewerId);
       }
 
       const pc = new RTCPeerConnection({
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun.cloudflare.com:3478' },
         ],
       });
       peersRef.current.set(viewerId, pc);
+      peerCreationTimeRef.current.set(viewerId, Date.now());
+      pendingIceRef.current.set(viewerId, []);
 
       // Add local tracks (with mute state preserved)
       streamRef.current.getTracks().forEach((track) => {
@@ -328,6 +349,11 @@ export function LocalPreview({
       if (pc && pc.signalingState === 'have-local-offer') {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          const pending = pendingIceRef.current.get(viewerId) || [];
+          for (const cand of pending) {
+            await pc.addIceCandidate(cand).catch(() => {});
+          }
+          pendingIceRef.current.set(viewerId, []);
         } catch (err) {
           // Handled
         }
@@ -339,9 +365,16 @@ export function LocalPreview({
       const { targetId, candidate, fromId } = payload || {};
       if (targetId === 'creator' && fromId && candidate) {
         const pc = peersRef.current.get(fromId);
-        if (pc && pc.remoteDescription) {
+        if (pc) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            const cand = new RTCIceCandidate(candidate);
+            if (pc.remoteDescription) {
+              await pc.addIceCandidate(cand);
+            } else {
+              const pending = pendingIceRef.current.get(fromId) || [];
+              pending.push(cand);
+              pendingIceRef.current.set(fromId, pending);
+            }
           } catch (err) {
             // Handled
           }

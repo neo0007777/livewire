@@ -18,6 +18,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
   const videoRef = useRef<any>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const isConnectedRef = useRef(false);
+  const pendingIceRef = useRef<RTCIceCandidate[]>([]);
   const viewerIdRef = useRef(Math.random().toString(36).slice(2, 9));
 
   const toggleMute = () => {
@@ -40,11 +41,14 @@ export function RemoteStage({ channel }: RemoteStageProps) {
 
     let isMounted = true;
     const viewerId = viewerIdRef.current;
+    pendingIceRef.current = [];
 
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' },
       ],
     });
     pcRef.current = pc;
@@ -52,8 +56,22 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     // When remote camera/mic tracks arrive from creator
     pc.ontrack = (event) => {
       if (!isMounted) return;
-      if (event.streams && event.streams[0]) {
-        setRemoteStream(event.streams[0]);
+      let stream = event.streams && event.streams[0];
+      if (stream) {
+        setRemoteStream(stream);
+        isConnectedRef.current = true;
+        setIsConnected(true);
+      } else if (event.track) {
+        setRemoteStream((prev) => {
+          if (prev) {
+            const exists = prev.getTracks().find((t: any) => t.id === event.track.id);
+            if (!exists) {
+              prev.addTrack(event.track);
+            }
+            return prev;
+          }
+          return new MediaStream([event.track]);
+        });
         isConnectedRef.current = true;
         setIsConnected(true);
       }
@@ -83,6 +101,11 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           event: 'p2p_answer',
           payload: { viewerId, answer },
         });
+
+        for (const cand of pendingIceRef.current) {
+          await pc.addIceCandidate(cand).catch(() => {});
+        }
+        pendingIceRef.current = [];
       } catch (err) {
         // Offer handle error
       }
@@ -92,7 +115,12 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     const handleIce = async ({ payload }: any) => {
       if (payload?.targetId === viewerId && payload?.candidate) {
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          const cand = new RTCIceCandidate(payload.candidate);
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(cand);
+          } else {
+            pendingIceRef.current.push(cand);
+          }
         } catch (err) {
           // ICE add error
         }
@@ -129,7 +157,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     };
 
     requestStream();
-    const interval = setInterval(requestStream, 2000);
+    const interval = setInterval(requestStream, 1500);
 
     return () => {
       isMounted = false;

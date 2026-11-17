@@ -14,6 +14,13 @@ interface RemoteStageProps {
   streamId?: string;
 }
 
+const STUN_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+];
+
 export function RemoteStage({ channel }: RemoteStageProps) {
   const [p2pStream, setP2pStream] = useState<MediaStream | null>(null);
   const [isCreatorVideoPaused, setIsCreatorVideoPaused] = useState(false);
@@ -23,6 +30,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const isP2pConnectedRef = useRef(false);
+  const pendingIceRef = useRef<RTCIceCandidate[]>([]);
   const viewerIdRef = useRef(Math.random().toString(36).slice(2, 9));
 
   // Initialize native audio session for audio playback on Android/iOS
@@ -50,23 +58,29 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     let isMounted = true;
     const viewerId = viewerIdRef.current;
 
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-      ],
-    });
+    const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
     pcRef.current = pc;
+    pendingIceRef.current = [];
 
     // Handle remote track arrival
     pc.ontrack = (event: any) => {
       if (!isMounted) return;
       let stream = event.streams && event.streams[0];
-      if (!stream && event.track) {
-        stream = new MediaStream([event.track]);
-      }
       if (stream) {
         setP2pStream(stream);
+        isP2pConnectedRef.current = true;
+        setConnectionStatus('connected');
+      } else if (event.track) {
+        setP2pStream((prev) => {
+          if (prev) {
+            const exists = prev.getTracks().find((t: any) => t.id === event.track.id);
+            if (!exists) {
+              prev.addTrack(event.track);
+            }
+            return prev;
+          }
+          return new MediaStream([event.track]);
+        });
         isP2pConnectedRef.current = true;
         setConnectionStatus('connected');
       }
@@ -96,6 +110,12 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           event: 'p2p_answer',
           payload: { viewerId, answer },
         });
+
+        // Flush any ICE candidates received prior to offer description
+        for (const cand of pendingIceRef.current) {
+          await pc.addIceCandidate(cand).catch(() => {});
+        }
+        pendingIceRef.current = [];
       } catch (err) {
         console.warn('[RemoteStage.native] Error handling P2P offer:', err);
       }
@@ -105,7 +125,12 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     const handleIce = async ({ payload }: any) => {
       if (payload?.targetId === viewerId && payload?.candidate) {
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          const candidate = new RTCIceCandidate(payload.candidate);
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(candidate);
+          } else {
+            pendingIceRef.current.push(candidate);
+          }
         } catch (err) {
           console.warn('[RemoteStage.native] Error adding ICE candidate:', err);
         }
@@ -137,16 +162,20 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       payload: { viewerId },
     });
 
-    // Re-request stream periodically if not connected yet
+    // Re-request stream periodically until connected
     const retryInterval = setInterval(() => {
-      if (!isP2pConnectedRef.current && isMounted) {
+      if (isP2pConnectedRef.current) {
+        clearInterval(retryInterval);
+        return;
+      }
+      if (isMounted && channel) {
         channel.send({
           type: 'broadcast',
           event: 'p2p_request_stream',
           payload: { viewerId },
         });
       }
-    }, 3000);
+    }, 1500);
 
     return () => {
       isMounted = false;
@@ -155,6 +184,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
         pcRef.current.close();
         pcRef.current = null;
       }
+      pendingIceRef.current = [];
     };
   }, [channel]);
 
@@ -262,40 +292,40 @@ const styles = StyleSheet.create({
   },
   pausedSub: {
     color: '#94A3B8',
-    fontSize: 12,
+    fontSize: 13,
   },
   micMutedBadge: {
     position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.4)',
+    top: 96,
+    left: 14,
+    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
   micMutedText: {
-    color: '#FCA5A5',
+    color: '#FFF',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   screenShareBadge: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    top: 96,
+    left: 14,
+    backgroundColor: 'rgba(30, 27, 75, 0.88)',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.4)',
+    borderColor: 'rgba(99, 102, 241, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
   screenShareText: {
     color: '#C7D2FE',
