@@ -233,3 +233,14 @@
   - Updated `mobile/src/app/(app)/summary/[id].tsx` with `formatMomentRange` helper to calculate and display bucket intervals (`start_seconds` through `end_seconds`).
   - Enhanced summary narrative formatter to dynamically transform single timestamp references into duration ranges (`between 00:00 – 00:30`).
   - Updated PostgreSQL `generate_stream_highlights` RPC function and n8n workflow definitions (`03-stream-ended-highlights.json`, `03-stream-ended-highlights-gemini.json`) to standardize 30-second interval ranges across automated recaps.
+
+### Turn 16: Android Release Compilation & R8 Proguard Resolution
+**User:**
+> "Execution failed for task ':app:minifyReleaseWithR8'. ERROR: R8: Missing class livekit.org.jni_zero.JniZeroJni"
+
+**Action Taken:**
+- Resolved Android code shrinker (R8) stripping native WebRTC JNI bridge classes during release build compilation:
+  - Installed and configured `expo-build-properties` plugin in `app.json`.
+  - Configured `enableMinifyInReleaseBuilds: false` for internal preview APK distribution, bypassing code stripping issues and accelerating cloud compilation.
+  - Injected explicit Proguard keep rules (`-keep class livekit.org.jni_zero.** { *; }`, `-dontwarn org.webrtc.**`) to protect WebRTC native bindings.
+  - Re-triggered EAS Cloud Preview build under linked project `@shiva_2169/livewire`.
