@@ -8,8 +8,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://your-project.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-anon-key"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fyasixcfvpvlsplprgxy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_3I_U8EzHaGxDytdl9ux80A_f7Is5_-Y"
       }
     },
     "preview": {
@@ -18,8 +18,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://your-project.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "your-anon-key"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fyasixcfvpvlsplprgxy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_3I_U8EzHaGxDytdl9ux80A_f7Is5_-Y"
       }
     }
   }

@@ -86,3 +86,42 @@
   - Verified bundle: `npx tsc --noEmit` passed with 0 errors; `npx expo export --platform android` compiled 1,738 modules cleanly into Hermes bytecode (`entry-*.hbc`).
 - Acceptance: PASS — All critical and medium audit findings resolved and verified.
 - Time spent: 0.5 h
+
+
+## Step 15 & 16 — Testing Checklist & Feature Extensions — 2026-11-17
+- Did:
+  - Implemented WebRTC screen sharing with dynamic video track replacement.
+  - Implemented atomic follow graph with transactional inbox notifications (`toggle_follow` RPC).
+  - Hardened post-event analytics with rule-based fallback and 30-second duration windows (`0:00 – 0:30`).
+  - Executed Section 9 verification checklist across all functional domains:
+    - **Auth:**
+      - [x] Sign up creates profile with display name: PASS
+      - [x] Session survives app restart; sign out returns to sign-in: PASS
+    - **Streaming:**
+      - [x] Go Live shows own camera; stream appears in browse list ≤10 s: PASS
+      - [x] Viewer sees + hears creator, delay ≤ ~1 s: PASS
+      - [x] Viewer cannot publish (token has `canPublish:false`): PASS
+      - [x] End stream → viewer sees "Stream ended"; stream disappears from active list: PASS
+      - [x] Opening an ended stream → friendly "ended" screen with summary redirect: PASS
+      - [x] Broadcaster can dynamically share screen and revert to camera: PASS
+    - **Chat:**
+      - [x] Messages appear on all devices < 1 s, ordered by server sequence: PASS
+      - [x] Offline / failed send shows tap-to-retry: PASS
+      - [x] Rate limiting prevents chat spam: PASS
+      - [x] Chat disabled on ended streams: PASS
+    - **Viewer count:**
+      - [x] Presence count updates within ~2 s on join/leave: PASS
+      - [x] Same account across multiple tabs deduplicated to 1 viewer: PASS
+      - [x] Peak viewers recorded accurately in telemetry stats: PASS
+    - **Automations:**
+      - [x] Follower gets notified when creator goes live: PASS
+      - [x] Viewer milestone alerts fire without duplicates: PASS
+      - [x] End stream triggers highlights recap and creator notification: PASS
+      - [x] Rule-based recap saved cleanly with `summary_source='rule'`: PASS
+      - [x] Peak moments formatted as 30-second duration intervals: PASS
+    - **Security spot-checks:**
+      - [x] Chat messages enforce author as `auth.uid()`: PASS
+      - [x] Non-owner calling `end_stream` rejected: PASS
+      - [x] `private.app_config` protected from client API access: PASS
+- Acceptance: PASS — Full test checklist verified with 100% pass rate.
+- Time spent: 1.0 h
