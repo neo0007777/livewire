@@ -8,7 +8,7 @@ import {
   RTCSessionDescription,
   MediaStream,
 } from '@livekit/react-native-webrtc';
-import { VideoCameraOffIcon, FlipCameraIcon } from './Icons';
+import { VideoCameraOffIcon, FlipCameraIcon, ScreenShareIcon } from './Icons';
 import { requestBroadcastPermissions } from '../lib/permissions';
 
 interface LocalPreviewProps {
@@ -39,14 +39,19 @@ const ICE_SERVERS = [
 
 export function LocalPreview({
   channel,
+  streamId,
   isVideoMuted = false,
   isMicMuted = false,
   facingMode = 'user',
+  isScreenSharing = false,
+  onScreenShareChange,
 }: LocalPreviewProps) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const cameraVideoTrackRef = useRef<any>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const pendingIceRef = useRef<Map<string, RTCIceCandidate[]>>(new Map());
   const peerCreationTimeRef = useRef<Map<string, number>>(new Map());
@@ -151,6 +156,10 @@ export function LocalPreview({
     initHardwareCamera(facingMode);
 
     return () => {
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach((track) => track.stop());
+        screenStreamRef.current = null;
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -162,18 +171,158 @@ export function LocalPreview({
     };
   }, []);
 
-  // Handle camera flip when prop changes
-  useEffect(() => {
-    if (currentFacingRef.current !== facingMode && streamRef.current) {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      if (videoTrack && (videoTrack as any)._switchCamera) {
-        (videoTrack as any)._switchCamera();
-        currentFacingRef.current = facingMode;
-      } else {
-        initHardwareCamera(facingMode);
+  // Dedicated helper to switch camera hardware without breaking peer connections
+  const switchCameraFacing = useCallback(async (facing: 'user' | 'environment') => {
+    if (isScreenSharing) return;
+
+    const currentTrack = streamRef.current?.getVideoTracks()[0];
+    if (!currentTrack) {
+      initHardwareCamera(facing);
+      return;
+    }
+
+    let success = false;
+    // Attempt 1: Standard W3C applyConstraints in react-native-webrtc
+    if (typeof (currentTrack as any).applyConstraints === 'function') {
+      try {
+        await (currentTrack as any).applyConstraints({
+          facingMode: facing,
+          width: 1280,
+          height: 720,
+        });
+        currentFacingRef.current = facing;
+        success = true;
+      } catch (err) {
+        // Fall through to seamless track replacement fallback
       }
     }
-  }, [facingMode, initHardwareCamera]);
+
+    // Attempt 2: If applyConstraints fails, seamlessly acquire the target camera track
+    if (!success) {
+      try {
+        const newStream = (await mediaDevices.getUserMedia({
+          video: { facingMode: facing, width: 1280, height: 720 },
+          audio: false,
+        })) as MediaStream;
+
+        const newTrack = newStream.getVideoTracks()[0];
+        if (newTrack && streamRef.current) {
+          const oldTrack = streamRef.current.getVideoTracks()[0];
+          if (oldTrack) {
+            streamRef.current.removeTrack(oldTrack);
+            oldTrack.stop();
+          }
+          newTrack.enabled = !isVideoMuted;
+          streamRef.current.addTrack(newTrack);
+          currentFacingRef.current = facing;
+
+          // Swap track seamlessly on all active viewer peer connections without renegotiation
+          peersRef.current.forEach((pc) => {
+            const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+            if (sender) {
+              sender.replaceTrack(newTrack).catch(() => {});
+            }
+          });
+
+          // Trigger state re-render for local RTCView preview
+          setLocalStream(streamRef.current);
+        }
+      } catch (e) {
+        console.warn('[LocalPreview.native] Camera switch fallback error:', e);
+      }
+    }
+  }, [isScreenSharing, isVideoMuted, initHardwareCamera]);
+
+  // Handle camera flip when facingMode prop changes
+  useEffect(() => {
+    if (currentFacingRef.current !== facingMode && !isScreenSharing) {
+      switchCameraFacing(facingMode);
+    }
+  }, [facingMode, isScreenSharing, switchCameraFacing]);
+
+  // Handle native Screen Share toggle
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function handleScreenShareToggle() {
+      if (isScreenSharing) {
+        try {
+          // In @livekit/react-native-webrtc, getDisplayMedia starts Android MediaProjection
+          const displayStream = (await (mediaDevices as any).getDisplayMedia()) as MediaStream;
+
+          if (isCancelled) {
+            displayStream.getTracks().forEach((t) => t.stop());
+            return;
+          }
+
+          const screenTrack = displayStream.getVideoTracks()[0];
+          if (!screenTrack) {
+            onScreenShareChange?.(false);
+            return;
+          }
+
+          screenStreamRef.current = displayStream;
+
+          // Android system notification "Stop recording" handler
+          screenTrack.onended = () => {
+            onScreenShareChange?.(false);
+          };
+
+          if (streamRef.current) {
+            const currentVideo = streamRef.current.getVideoTracks()[0];
+            if (currentVideo) {
+              cameraVideoTrackRef.current = currentVideo;
+              streamRef.current.removeTrack(currentVideo);
+            }
+            streamRef.current.addTrack(screenTrack);
+
+            peersRef.current.forEach((pc) => {
+              const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+              if (sender) {
+                sender.replaceTrack(screenTrack).catch(() => {});
+              }
+            });
+
+            setLocalStream(streamRef.current);
+          }
+        } catch (err) {
+          console.warn('[LocalPreview.native] Screen share error / cancelled:', err);
+          onScreenShareChange?.(false);
+        }
+      } else {
+        // Revert to camera feed
+        if (screenStreamRef.current) {
+          screenStreamRef.current.getTracks().forEach((t) => t.stop());
+          screenStreamRef.current = null;
+        }
+
+        const cameraTrack = cameraVideoTrackRef.current;
+        if (cameraTrack && streamRef.current) {
+          const currentTrack = streamRef.current.getVideoTracks()[0];
+          if (currentTrack) {
+            streamRef.current.removeTrack(currentTrack);
+          }
+          cameraTrack.enabled = !isVideoMuted;
+          streamRef.current.addTrack(cameraTrack);
+
+          peersRef.current.forEach((pc) => {
+            const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+            if (sender) {
+              sender.replaceTrack(cameraTrack).catch(() => {});
+            }
+          });
+
+          setLocalStream(streamRef.current);
+        }
+      }
+    }
+
+    handleScreenShareToggle();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isScreenSharing]);
 
   // Handle mute toggles on active stream tracks
   useEffect(() => {
@@ -368,10 +517,16 @@ export function LocalPreview({
       <RTCView
         streamURL={localStream.toURL()}
         style={StyleSheet.absoluteFill}
-        objectFit="cover"
-        mirror={facingMode === 'user'}
+        objectFit={isScreenSharing ? 'contain' : 'cover'}
+        mirror={!isScreenSharing && facingMode === 'user'}
         zOrder={0}
       />
+      {isScreenSharing && (
+        <View style={styles.screenShareBadge}>
+          <ScreenShareIcon size={13} color="#818CF8" />
+          <Text style={styles.screenShareBadgeText}>Sharing Your Screen Live</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -470,5 +625,26 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
+  },
+  screenShareBadge: {
+    position: 'absolute',
+    top: 146,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(30, 27, 75, 0.88)',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  screenShareBadgeText: {
+    color: '#C7D2FE',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
