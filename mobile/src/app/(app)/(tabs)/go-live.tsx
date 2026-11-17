@@ -23,6 +23,7 @@ import {
 } from '../../../components/Icons';
 import { useSessionStore } from '../../../stores/session';
 import { supabase } from '../../../lib/supabase';
+import { requestBroadcastPermissions } from '../../../lib/permissions';
 
 export default function GoLiveScreen() {
   const router = useRouter();
@@ -37,6 +38,11 @@ export default function GoLiveScreen() {
   const handleStartBroadcast = async () => {
     if (!title.trim()) {
       Alert.alert('Stream Title Required', 'Please enter a title for your live stream.');
+      return;
+    }
+
+    const hasPermissions = await requestBroadcastPermissions();
+    if (!hasPermissions) {
       return;
     }
 
