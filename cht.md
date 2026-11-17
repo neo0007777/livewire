@@ -313,3 +313,19 @@
   - Generated universal installable preview APK artifact with integrated WebRTC native drivers, LiveKit Cloud SFU connectivity, offline queue persistence, and complete safe-area responsiveness.
   - Updated repository release documentation in `README.md` and `BUILD_LOG.md` with direct artifact links and installation walkthrough.
   - Validated end-to-end functionality across all three challenge milestones: Phase 1 (Live Video & Realtime Chat), Phase 2 (Persistent Offline Outbox & FIFO Reconnection Sync), and Phase 3 (n8n Event Automation Workflows).
+
+### Turn 23: Android Camera Runtime Permissions & Active Track Recovery
+**User:**
+> "when iam streaming with my phone its only showing intilization camera but the camera is not working" (Screenshot showing broadcast stage stuck on "Initializing Camera...")
+
+**Action Taken:**
+- Diagnosed root cause: Android requires dangerous permissions (`CAMERA`, `RECORD_AUDIO`) to be authorized at runtime via Android system dialogs. Without explicit runtime requests, WebRTC's initial `getUserMedia` call fails with `PermissionDenied`, leaving LiveKit unable to publish local video tracks.
+- Implemented runtime permission manager in `mobile/src/lib/permissions.ts` with explicit `PermissionsAndroid.requestMultiple` checks and deep-linking to system settings (`Linking.openSettings`) if denied.
+- Integrated runtime permission prompts into `go-live.tsx` prior to room creation and in `broadcast/[id].tsx` on screen mount.
+- Initialized native audio hardware pipeline via `AudioSession.startAudioSession()` in `broadcast/[id].tsx`.
+- Upgraded `LocalPreview.tsx` with active local participant management via `useLocalParticipant()`:
+  - Added proactive `setCameraEnabled(true)` synchronization whenever hardware is unmuted.
+  - Added hardware camera sensor flipping (`facingMode: 'user' | 'environment'`) via `restartTrack` and `_switchCamera`.
+  - Added dynamic microphone and screen-sharing hardware toggles directly on `localParticipant`.
+  - Added actionable error state with 1-tap "Grant Permissions & Retry" fallback.
+- Verified bundle and TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
