@@ -14,11 +14,20 @@ interface RemoteStageProps {
   streamId?: string;
 }
 
-const STUN_SERVERS = [
+const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp',
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
 ];
 
 export function RemoteStage({ channel }: RemoteStageProps) {
@@ -37,7 +46,11 @@ export function RemoteStage({ channel }: RemoteStageProps) {
   useEffect(() => {
     try {
       const { AudioSession } = require('@livekit/react-native');
-      AudioSession.startAudioSession().catch((err: any) => {
+      AudioSession.startAudioSession().then(() => {
+        try {
+          AudioSession.selectAudioOutput?.('speaker');
+        } catch (e) {}
+      }).catch((err: any) => {
         console.warn('AudioSession start error on viewer:', err);
       });
 
@@ -58,29 +71,49 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     let isMounted = true;
     const viewerId = viewerIdRef.current;
 
-    const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pcRef.current = pc;
     pendingIceRef.current = [];
 
-    // Handle remote track arrival
+    // Track arrival: reconstruct MediaStream with all tracks to guarantee React re-render & audio playback
     pc.ontrack = (event: any) => {
       if (!isMounted) return;
-      let stream = event.streams && event.streams[0];
+      isP2pConnectedRef.current = true;
+      setConnectionStatus('connected');
+
+      const stream = event.streams && event.streams[0];
       if (stream) {
-        setP2pStream(stream);
-        isP2pConnectedRef.current = true;
-        setConnectionStatus('connected');
+        const allTracks = stream.getTracks();
+        allTracks.forEach((t: any) => {
+          t.enabled = true;
+        });
+        setP2pStream(new MediaStream(allTracks));
       } else if (event.track) {
+        event.track.enabled = true;
         setP2pStream((prev) => {
           if (prev) {
-            const exists = prev.getTracks().find((t: any) => t.id === event.track.id);
-            if (!exists) {
-              prev.addTrack(event.track);
-            }
-            return prev;
+            const remaining = prev.getTracks().filter((t: any) => t.id !== event.track.id);
+            return new MediaStream([...remaining, event.track]);
           }
           return new MediaStream([event.track]);
         });
+      }
+    };
+
+    // Connection state listeners
+    pc.onconnectionstatechange = () => {
+      if (!isMounted) return;
+      if (pc.connectionState === 'connected') {
+        isP2pConnectedRef.current = true;
+        setConnectionStatus('connected');
+      } else if (pc.connectionState === 'failed') {
+        setConnectionStatus('idle');
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (!isMounted) return;
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
         isP2pConnectedRef.current = true;
         setConnectionStatus('connected');
       }
@@ -175,7 +208,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           payload: { viewerId },
         });
       }
-    }, 1500);
+    }, 3000);
 
     return () => {
       isMounted = false;

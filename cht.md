@@ -434,3 +434,24 @@
   3. **Prominent Autoplay Audio Unmute Banner:** Added an interactive floating banner (`🔊 Browser audio is muted — Click here to Unmute`) and full-screen click responder enabling viewers to unmute host audio with a single user gesture.
   4. **Dynamic Request Cadence:** Increased P2P signaling retry interval to 3,000ms to allow cellular NAT hole-punching to complete without redundant renegotiation pings.
 - Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
+
+### Turn 30: Cellular Symmetric NAT Traversal, P2P Teardown Guard & Native MediaStream Audio Pipeline
+**User:**
+> "iam testing with 2 phones iam not able to see the stream from other phone check the github and see and also can not hear the chat is working fine only"
+> "i want to test this over my mac ow it will work on mobile as i can not update and download the apk again and again so how to d it"
+
+**Action Taken:**
+- Analyzed reference implementation (`ANANYA542/LiveCast`) and deconstructed multi-phone streaming architecture:
+  1. LiveCast relies on hosted LiveKit Cloud SFU tokens where video/audio tracks route centrally through public SFU nodes, circumventing peer-to-peer NAT traversal challenges.
+  2. For zero-config fallback P2P operation in LiveWire without external SFU dependencies, cellular mobile-to-mobile connections require symmetric NAT hole-punching and non-destructive renegotiation.
+- Diagnosed root causes for mobile-to-mobile stream failure and absence of audio:
+  1. **Premature Peer Teardown in Broadcaster Pipeline:** In `LocalPreview.native.tsx` and `LocalPreview.web.tsx`, the duplicate offer protection checked `signalingState === 'have-local-offer'`. As soon as the viewer's SDP answer arrived, `signalingState` transitioned to `'stable'`. When the viewer's periodic retry ping fired at 1,500ms while ICE candidate verification was still progressing, the broadcaster treated the handshake as unestablished and invoked `existingPc.close()`, systematically aborting active connections in an infinite loop.
+  2. **Microphone Exclusion in Hardware Resolution Fallback:** In `LocalPreview.native.tsx`, resolution constraint tiers alternated between `audio: true` and `audio: false`. If 720p at 30fps failed initial device negotiation, tier 2 acquired 720p with `audio: false`, completely discarding the microphone track from the broadcast media stream.
+  3. **Symmetric NAT & Carrier CGNAT Blockade:** Standard STUN servers cannot traverse symmetric NATs enforced by mobile cellular carriers (CGNAT on 4G/5G). Without TURN relay candidates, peer candidate binding failed between cellular endpoints.
+  4. **React State Stagnation on Native Track Arrival:** In `RemoteStage.native.tsx`, sequential track arrivals mutated `prev` in-place, preventing React re-rendering and failing to bind incoming audio tracks to the platform playback layer.
+- Architectural Solutions Applied:
+  1. **Extended 15-Second Active Handshake Protection:** Updated `handleRequestStream` in `LocalPreview.native.tsx` and `LocalPreview.web.tsx` to retain and protect active peer connections across all non-failed states for 15,000ms, re-transmitting existing local descriptions instead of closing connections when duplicate requests arrive.
+  2. **Audio-Preserving Constraint Hierarchy:** Restructured `constraintTiers` to maintain `audio: true` across 720p, 480p, facingMode, and unconstrained video tiers, relegating `audio: false` exclusively to permission-denied fallbacks.
+  3. **Open Relay TURN & STUN Topology:** Integrated Metered OpenRelay TURN endpoints across UDP, TCP, and TLS ports alongside Google and Cloudflare STUN servers, ensuring guaranteed relay traversal across carrier cellular firewalls.
+  4. **Immutable Native MediaStream Reconstruction & Speaker Routing:** Updated `RemoteStage.native.tsx` to instantiate a fresh `MediaStream` on every track arrival with `t.enabled = true`, ensuring immediate audio engine attachment and automatic speakerphone routing via `AudioSession.selectAudioOutput('speaker')`.
+- Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,007 bundled modules.

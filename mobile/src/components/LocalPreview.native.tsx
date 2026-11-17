@@ -21,11 +21,20 @@ interface LocalPreviewProps {
   onScreenShareChange?: (isSharing: boolean) => void;
 }
 
-const STUN_SERVERS = [
+const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp',
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
 ];
 
 export function LocalPreview({
@@ -63,14 +72,15 @@ export function LocalPreview({
       }
 
       let stream: MediaStream | null = null;
+      // Prioritize preserving audio across all video resolutions; only fallback to video-only if audio is completely blocked
       const constraintTiers = [
-        { video: { facingMode: facing, width: 1280, height: 720, frameRate: 30 }, audio: true },
-        { video: { facingMode: facing, width: 1280, height: 720, frameRate: 30 }, audio: false },
-        { video: { facingMode: facing, width: 640, height: 480, frameRate: 24 }, audio: true },
-        { video: { facingMode: facing, width: 640, height: 480, frameRate: 24 }, audio: false },
+        { video: { facingMode: facing, width: 1280, height: 720 }, audio: true },
+        { video: { facingMode: facing, width: 640, height: 480 }, audio: true },
         { video: { facingMode: facing }, audio: true },
-        { video: { facingMode: facing }, audio: false },
         { video: true, audio: true },
+        { video: { facingMode: facing, width: 1280, height: 720 }, audio: false },
+        { video: { facingMode: facing, width: 640, height: 480 }, audio: false },
+        { video: { facingMode: facing }, audio: false },
         { video: true, audio: false },
       ];
 
@@ -173,7 +183,21 @@ export function LocalPreview({
         ) {
           return;
         }
-        if (existingPc.signalingState === 'have-local-offer' && ageMs < 4000) {
+        // If connection was created less than 15 seconds ago and hasn't failed, keep negotiating!
+        if (
+          existingPc.connectionState !== 'failed' &&
+          existingPc.iceConnectionState !== 'failed' &&
+          existingPc.connectionState !== 'closed' &&
+          ageMs < 15000
+        ) {
+          // If still waiting for answer and more than 2 seconds elapsed, re-send the offer
+          if (existingPc.signalingState === 'have-local-offer' && ageMs > 2000 && existingPc.localDescription) {
+            channel.send({
+              type: 'broadcast',
+              event: 'p2p_offer',
+              payload: { targetId: viewerId, offer: existingPc.localDescription },
+            });
+          }
           return;
         }
         existingPc.close();
@@ -181,7 +205,7 @@ export function LocalPreview({
         pendingIceRef.current.delete(viewerId);
       }
 
-      const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       peersRef.current.set(viewerId, pc);
       peerCreationTimeRef.current.set(viewerId, Date.now());
       pendingIceRef.current.set(viewerId, []);

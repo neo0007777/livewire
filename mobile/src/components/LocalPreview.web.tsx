@@ -294,7 +294,19 @@ export function LocalPreview({
         ) {
           return;
         }
-        if (existingPc.signalingState === 'have-local-offer' && ageMs < 4000) {
+        if (
+          existingPc.connectionState !== 'failed' &&
+          existingPc.iceConnectionState !== 'failed' &&
+          existingPc.connectionState !== 'closed' &&
+          ageMs < 15000
+        ) {
+          if (existingPc.signalingState === 'have-local-offer' && ageMs > 2000 && existingPc.localDescription) {
+            channel.send({
+              type: 'broadcast',
+              event: 'p2p_offer',
+              payload: { targetId: viewerId, offer: existingPc.localDescription },
+            });
+          }
           return;
         }
         existingPc.close();
@@ -308,6 +320,15 @@ export function LocalPreview({
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun.cloudflare.com:3478' },
+          {
+            urls: [
+              'turn:openrelay.metered.ca:80',
+              'turn:openrelay.metered.ca:443',
+              'turn:openrelay.metered.ca:443?transport=tcp',
+            ],
+            username: 'openrelayproject',
+            credential: 'openrelayproject',
+          },
         ],
       });
       peersRef.current.set(viewerId, pc);
