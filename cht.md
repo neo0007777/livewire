@@ -329,3 +329,31 @@
   - Added dynamic microphone and screen-sharing hardware toggles directly on `localParticipant`.
   - Added actionable error state with 1-tap "Grant Permissions & Retry" fallback.
 - Verified bundle and TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
+
+### Turn 24: Cross-Platform WebRTC P2P Signaling in RemoteStage for Hybrid Broadcasts
+**User:**
+> "also from phone if iam trying to watch someone else stream this is what iam getting" (Screenshot showing viewer stage stuck on "Connecting to Live Broadcast... Waiting for video feed")
+
+**Action Taken:**
+- Diagnosed root cause: In hybrid testing scenarios where a desktop browser broadcasts via `LocalPreview.web.tsx` using WebRTC P2P mesh over Supabase Realtime, native mobile viewers running `RemoteStage.tsx` were only listening to LiveKit Cloud SFU tracks (`useTracks([Track.Source.Camera])`) and ignored Supabase Realtime P2P signaling events (`p2p_offer`, `p2p_ice`).
+- Implemented dual-mode media subscription architecture in `RemoteStage.tsx`:
+  - **Primary:** LiveKit Cloud SFU subscriber for ultra-low latency mobile-to-mobile live streams.
+  - **Fallback:** Native WebRTC `RTCPeerConnection` signaling consumer integrated with Supabase Realtime channel (`p2p_request_stream`, `p2p_offer`, `p2p_answer`, `p2p_ice`).
+  - Added audio pipeline session activation (`AudioSession.startAudioSession()`) for native Android audio playback.
+  - Added real-time creator hardware state overlays responding to `creator_media_state` broadcast events ("Camera turned off by creator", "Microphone muted").
+  - Seamlessly mounted native WebRTC `RTCView` when P2P video stream is received, falling back to LiveKit `VideoTrack` when SFU stream is present.
+- Upgraded native broadcaster `LocalPreview.tsx` to participate in P2P signaling mesh by answering peer stream requests from web and mobile clients simultaneously.
+- Verified TypeScript compilation with 0 errors across all native WebRTC integrations.
+
+### Turn 25: Tab Navigation Realignment & Layout Normalization
+**User:**
+> (Provided comparison screenshots of bottom tab bar: broken horizontal hero pill overlapping right boundary vs. clean symmetrical tab layout)
+
+**Action Taken:**
+- Diagnosed UI defect: The custom horizontal `tabBarButton` hero pill layout introduced in Turn 21 exceeded the width allocated per tab item on mobile viewports (~70-90px on narrow phone screens), causing the "Go Live" action text to clip and overflow the pill's right border.
+- Re-architected `mobile/src/app/(app)/(tabs)/_layout.tsx` to restore a clean, symmetrical, 4-tab vertical hierarchy:
+  - Replaced the horizontal pill button with a centered circular beacon badge (`goLiveBtn`, 30x30px, 15px border radius) housing `BroadcastIcon`.
+  - Positioned the dedicated text label `Go Live` directly below the icon container using `tabBarLabelPosition: 'below-icon'`, perfectly matching the `Live`, `Activity`, and `Profile` tabs.
+  - Preserved distinct red accent styling (`#EF4444`) with focused scale transform and red focus dot (`activeDotRed`).
+  - Guaranteed uniform 25% screen-width distribution across all 4 tab destinations, ensuring clean responsiveness across all Android screen sizes without horizontal clipping or text overflow.
+- Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
