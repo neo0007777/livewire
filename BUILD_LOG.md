@@ -208,7 +208,7 @@
   - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/b232a0a0-5924-4827-871f-83f1be86b615`
 - Broke: None.
 - Fixed: Multi-phone mobile cellular stream black screen, audio silence, and 1.5s peer connection teardown.
-- Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors; Expo web production export bundled 1,007 modules with 0 errors. EAS Cloud Build #8 queued and running.
+- Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors; Expo web production export bundled 1,007 modules with 0 errors. EAS Cloud Build #8 (`b232a0a0-5924-4827-871f-83f1be86b615`) finished with status `finished` (exit code 0). Verified universal APK artifact generated. Direct APK download URL: https://expo.dev/artifacts/eas/tm3reRohU3YqiiAo_XiXetZ061HBRvpPmD-KYYkZy0U.apk
 - Time spent: 0.5 h
 
 
