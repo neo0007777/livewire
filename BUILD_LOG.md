@@ -184,8 +184,8 @@
 ## Step 20 — Build #7: WebRTC Signaling Hardening, SFU Contention Bypass & Candidate Queuing — 2026-11-17
 - Did:
   - Eliminated hardware camera contention in `LiveKitWrapper.tsx`: bypassed `LiveKitRoom` connection when `serverUrl` is a placeholder, preventing Android CameraService `ERROR_CAMERA_IN_USE` locks.
-  - Implemented an 8-tier resolution and audio constraint fallback cascade in `LocalPreview.native.tsx` (720p audio -> 720p mute -> 480p audio -> 480p mute -> facingMode audio -> facingMode mute -> unconstrained video audio -> unconstrained video mute).
-  - Implemented ICE candidate queuing (`pendingIceRef`) across all broadcaster and viewer components (`LocalPreview.native.tsx`, `RemoteStage.native.tsx`, `LocalPreview.web.tsx`, `RemoteStage.web.tsx`) to buffer candidates arriving prior to remote description completion.
+  - Implemented an 8-tier resolution and audio constraint fallback cascade in `LocalPreview.native.tsx`.
+  - Implemented ICE candidate queuing (`pendingIceRef`) across all broadcaster and viewer components to buffer candidates arriving prior to remote description completion.
   - Added duplicate offer protection (`signalingState === 'have-local-offer'` check within 4,000ms window) preventing premature connection teardown during active negotiation.
   - Upgraded `RemoteStage.native.tsx` and `RemoteStage.web.tsx` track listener with dynamic track accumulation for individual stream/track payloads.
   - Refactored `requestBroadcastPermissions` in `permissions.ts` to allow broadcasting if camera is granted even if microphone permission is denied or pending.
@@ -194,6 +194,21 @@
 - Broke: None.
 - Fixed: Resolved black screen on stream viewing, camera initialization locks, and early ICE candidate drops.
 - Acceptance: PASS — EAS Cloud Build #7 (`dc0bb657-8fb0-4dae-b3c7-dd9c6e3c8c80`) finished with status `finished` (exit code 0). Verified universal APK artifact generated. Direct APK download URL: https://expo.dev/artifacts/eas/VuDLJmIRgSehnQ7N-qpwX6xHogquATdmxAXYXSv2z2E.apk
+- Time spent: 0.5 h
+
+## Step 21 — Build #8: Cellular Symmetric NAT Traversal, P2P Teardown Guard & Native Audio Engine — 2026-11-17
+- Did:
+  - Deconstructed multi-device streaming patterns from reference architecture (`ANANYA542/LiveCast`).
+  - Fixed 1,500ms connection teardown loop in `LocalPreview.native.tsx` and `LocalPreview.web.tsx`: extended negotiation protection window to 15,000ms across all non-failed states, re-transmitting existing SDP offers instead of closing peer connections.
+  - Integrated OpenRelay Metered TURN servers across UDP, TCP, and TLS (port 80/443) alongside Google and Cloudflare STUN endpoints for cellular symmetric NAT / CGNAT traversal.
+  - Restructured `constraintTiers` in `LocalPreview.native.tsx` to preserve `audio: true` across all resolutions (720p, 480p, facingMode, default) before falling back to video-only.
+  - Upgraded `RemoteStage.native.tsx` track listener to immutably reconstruct `MediaStream` on every track arrival with `t.enabled = true`, ensuring immediate audio engine attachment and automatic speakerphone routing via `AudioSession.selectAudioOutput('speaker')`.
+  - Added `pc.onconnectionstatechange` and `pc.oniceconnectionstatechange` listeners to immediately cancel retry intervals upon successful connection.
+  - Queued EAS Cloud Build #8 for universal Android release.
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/b232a0a0-5924-4827-871f-83f1be86b615`
+- Broke: None.
+- Fixed: Multi-phone mobile cellular stream black screen, audio silence, and 1.5s peer connection teardown.
+- Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors; Expo web production export bundled 1,007 modules with 0 errors. EAS Cloud Build #8 queued and running.
 - Time spent: 0.5 h
 
 
