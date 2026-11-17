@@ -418,3 +418,19 @@
   5. **Dual-Track Stream Recovery:** Extended `pc.ontrack` handler in `RemoteStage.native.tsx` and `RemoteStage.web.tsx` to dynamically construct and accumulate media streams when audio and video tracks arrive as individual streams or standalone tracks.
   6. **Resilient Permission Handler:** Refactored `requestBroadcastPermissions` in `permissions.ts` to guarantee stream launch if camera access is granted, allowing audio to operate in best-effort mode without hard blocking.
 - Verified TypeScript compilation and Expo production export with 0 errors across 1,007 bundled modules.
+
+### Turn 29: Web Viewer MediaStream Decoding Recovery & Browser Autoplay Audio Policy Alignment
+**User:**
+> "so rightnow i can see my vedio rumming in my phone as iam the one who's the host but if iam watching the tream from my laptop i can't see it it's just showing a black screen and also i can't hear it"
+
+**Action Taken:**
+- Verified milestone achievement: Android hardware camera initialization succeeded on physical device; broadcaster camera and microphone are running and streaming via native `RTCView`.
+- Diagnosed root causes for laptop web viewer black screen and absence of audio:
+  1. **In-Place MediaStream Mutation & React State Stagnation:** In `RemoteStage.web.tsx`, when standalone WebRTC tracks arrived sequentially (audio followed by video), calling `prev.addTrack(event.track)` mutated the existing `MediaStream` instance without changing its reference. React skipped re-rendering, and the HTML5 `<video>` element's decoder pipeline was not updated with the newly attached video track, remaining stuck on the audio-only black screen.
+  2. **Browser Autoplay Media Engagement Policy:** Modern browsers (Chrome, Edge, Brave, Safari) strictly reject unmuted programmatic `.play()` invocations (`NotAllowedError`) unless user interaction has occurred. When rejected, the browser pauses video execution at frame zero, rendering a black canvas and suppressing audio.
+- Architectural Solutions Applied:
+  1. **Immutable MediaStream Reconstruction on Track Arrival:** Updated `pc.ontrack` in `RemoteStage.web.tsx` to construct a new `MediaStream([...prev.getTracks(), event.track])` whenever a track arrives, re-binding directly to `videoRef.current.srcObject` and triggering decoder playback.
+  2. **Programmatic Default Mute & Autoplay Fallback:** Configured `videoRef.current.defaultMuted = true` and `videoRef.current.muted = true` in the DOM before playback initiation, with a promise rejection catch handler that automatically reverts to muted playback to ensure video frames decode instantly.
+  3. **Prominent Autoplay Audio Unmute Banner:** Added an interactive floating banner (`🔊 Browser audio is muted — Click here to Unmute`) and full-screen click responder enabling viewers to unmute host audio with a single user gesture.
+  4. **Dynamic Request Cadence:** Increased P2P signaling retry interval to 3,000ms to allow cellular NAT hole-punching to complete without redundant renegotiation pings.
+- Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
