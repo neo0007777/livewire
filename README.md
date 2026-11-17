@@ -4,7 +4,7 @@
 [![LiveKit SFU](https://img.shields.io/badge/LiveKit-WebRTC_SFU-002B36?style=for-the-badge&logo=webrtc&logoColor=white)](https://livekit.io)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres_%2B_Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![n8n](https://img.shields.io/badge/n8n-Workflow_Automation-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://n8n.io)
-[![Android Build](https://img.shields.io/badge/EAS_Build-Preview_APK-3880FF?style=for-the-badge&logo=android&logoColor=white)](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/1e2b68c1-1545-43ba-b114-ac8369e72c05)
+[![Android Build](https://img.shields.io/badge/EAS_Build-Preview_APK-3880FF?style=for-the-badge&logo=android&logoColor=white)](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3)
 
 LiveWire is a high-performance, real-time live event streaming platform built for mobile. It allows content creators to broadcast high-definition video and audio with sub-second WebRTC latency, engage with audiences via synchronized live chat, and leverage event-driven n8n automations for follower notifications, viewer milestones, and automated post-stream highlights.
 
@@ -13,7 +13,7 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 ## 📱 Deliverables & Demo Links
 
 - **Android Universal APK (EAS Cloud Build):**  
-  [Download Installable APK on Expo](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/1e2b68c1-1545-43ba-b114-ac8369e72c05) *(Internal distribution build — installs on any Android 8.0+ device)*
+  [Download Installable APK on Expo](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3) *(Internal distribution build — installs on any Android 8.0+ device)*
 - **Loom Video Walkthrough (3 Minutes):**  
   `[Link to Loom Video Demo]` *(3-minute walkthrough covering Creator Go Live, Viewer Join & Sub-Second Video, Real-Time Chat & Presence, and Post-Event Analytics)*
 - **Build Blueprint & Architecture Spec:**  
