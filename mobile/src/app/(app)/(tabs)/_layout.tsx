@@ -15,6 +15,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarLabelPosition: 'below-icon',
         tabBarStyle: {
           backgroundColor: '#0A0D18',
           borderTopColor: 'rgba(255, 255, 255, 0.07)',
@@ -54,14 +55,15 @@ export default function TabLayout() {
         name="go-live"
         options={{
           title: 'Go Live',
-          tabBarLabel: ({ focused }) => (
-            <Text style={[styles.goLiveLabel, focused && styles.goLiveLabelFocused]}>
-              Go Live
-            </Text>
-          ),
+          tabBarLabel: 'Go Live',
+          tabBarActiveTintColor: '#EF4444',
+          tabBarInactiveTintColor: '#EF4444',
           tabBarIcon: ({ focused }) => (
-            <View style={[styles.goLiveBtn, focused && styles.goLiveBtnFocused]}>
-              <BroadcastIcon size={16} color={focused ? '#FFFFFF' : '#EF4444'} />
+            <View style={styles.iconContainer}>
+              <View style={[styles.goLiveBtn, focused && styles.goLiveBtnFocused]}>
+                <BroadcastIcon size={16} color={focused ? '#FFFFFF' : '#EF4444'} />
+              </View>
+              {focused && <View style={styles.activeDotRed} />}
             </View>
           ),
         }}
@@ -122,7 +124,7 @@ const styles = StyleSheet.create({
     bottom: -4,
   },
   goLiveBtn: {
-    width: 44,
+    width: 30,
     height: 30,
     borderRadius: 15,
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
@@ -130,19 +132,18 @@ const styles = StyleSheet.create({
     borderColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
   },
   goLiveBtnFocused: {
     backgroundColor: '#EF4444',
     borderColor: '#F87171',
     transform: [{ scale: 1.05 }],
   },
-  goLiveLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#EF4444',
-  },
-  goLiveLabelFocused: {
-    color: '#F87171',
+  activeDotRed: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+    position: 'absolute',
+    bottom: -4,
   },
 });
