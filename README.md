@@ -10,20 +10,36 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 
 ---
 
-## 📱 Deliverables & Demo Links
+## 📱 Deliverables & Submission Links
 
-- **Android Universal APK (EAS Cloud Build):**  
-  - **Direct APK Download:** [livewire-preview.apk](https://expo.dev/artifacts/eas/53BQGdjA8EWvwsiF9hhiv_E7ez3lTFaKApbdOo-6McY.apk)  
-  - **Expo Build Page & QR Code:** [EAS Build #76533473](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3)  
-  *(Universal APK — installs directly on any Android 8.0+ phone)*
-- **Loom Video Walkthrough (3 Minutes):**  
-  `[Link to Loom Video Demo]` *(3-minute walkthrough covering Creator Go Live, Viewer Join & Sub-Second Video, Real-Time Chat & Presence, and Post-Event Analytics)*
-- **Build Blueprint & Architecture Spec:**  
-  [`docs/BLUEPRINT.md`](./docs/BLUEPRINT.md)
-- **Engineering Prompt History:**  
-  [`PROMPTS.md`](./PROMPTS.md) and [`cht.md`](./cht.md)
-- **Build & Test Verification Matrix:**  
-  [`BUILD_LOG.md`](./BUILD_LOG.md) *(Section 9 Checklist: 100% PASS)*
+| Deliverable | Description | Direct Link |
+|---|---|---|
+| **Android Universal APK** | Production internal distribution build (installs on any Android 8.0+ phone) | [📥 Download `livewire-preview.apk` (53.8 MB)](https://expo.dev/artifacts/eas/53BQGdjA8EWvwsiF9hhiv_E7ez3lTFaKApbdOo-6McY.apk) |
+| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #76533473](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3) |
+| **Video Walkthrough (3 Min)** | 3-minute video covering Creator Go Live, Viewer Join, Chat, and Analytics | `[Link to Loom Video Demo]` |
+| **Build Blueprint** | Original 1,700-line architecture specification & build requirements | [📄 `docs/BLUEPRINT.md`](./docs/BLUEPRINT.md) |
+| **Engineering Prompt History** | Full conversational prompts and technical evolution logs | [📄 `PROMPTS.md`](./PROMPTS.md) & [📄 `cht.md`](./cht.md) |
+| **Build & Test Verification Matrix** | Section 9 manual verification checklist (100% PASS) | [📄 `BUILD_LOG.md`](./BUILD_LOG.md) |
+| **Backend Documentation** | Supabase database migrations, RLS policies, and Edge Functions | [📄 `backend/README.md`](./backend/README.md) |
+| **n8n Automation Guide** | Workflows import, credentials setup, and database webhooks | [📄 `n8n-workflow/README.md`](./n8n-workflow/README.md) |
+
+---
+
+## 📲 Android APK Installation & Testing Guide
+
+1. **Download the APK:**  
+   Tap [**Download `livewire-preview.apk`**](https://expo.dev/artifacts/eas/53BQGdjA8EWvwsiF9hhiv_E7ez3lTFaKApbdOo-6McY.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3).
+2. **Install on Device:**  
+   Open the downloaded file. When prompted, tap **Settings** and toggle **Allow from this source** (standard for internal distribution APKs).
+3. **Sign In with Demo Presets:**  
+   Launch **LiveWire** and tap one of the 1-click test account presets:
+   - **Host / Broadcaster:** `woww@test.com`
+   - **Audience / Viewer:** `viewer@test.com`
+4. **End-to-End Walkthrough:**
+   - Tap **Go Live** tab → configure category & title → tap **Start Broadcast**.
+   - Test camera flip, mic mute, and **Share Screen** toggle.
+   - Watch from a secondary device or browser tab, exchange real-time chat messages, and test follow notifications.
+   - Tap **End Broadcast** → instantly view **Post-Event Analytics** with 30-second duration excitement windows (`0:00 – 0:30`).
 
 ---
 
@@ -81,7 +97,7 @@ flowchart TD
    - Sub-second glass-to-glass latency with WebRTC.
    - Host controls: 1080p camera toggle, mic mute/unmute, and camera flip.
    - **Live Screen Sharing:** Hosts can dynamically share their screen via browser-native display capture; viewers automatically receive the screen track with aspect-ratio containment and active indicator pills.
-   - Secure access tokens issued via Supabase Edge Function (`canPublish: true` for creator, `canPublish: false` for viewers).
+   - Secure access tokens issued via Supabase Edge Function ([`backend/supabase/functions/livekit-token/index.ts`](./backend/supabase/functions/livekit-token/index.ts)), enforcing `canPublish: true` for the creator and `canPublish: false` for viewers.
 2. **Synchronized Real-Time Chat:**
    - Client-generated UUIDs for idempotent delivery and offline retry.
    - Strict ordering by PostgreSQL server sequence numbers (`seq`).
@@ -93,56 +109,41 @@ flowchart TD
    - Periodic 5-second heartbeats recording `current_viewers` and `peak_viewers`.
 
 ### Phase 3: n8n Event-Driven Automations & Analytics
-1. **Workflow 1 (`01-stream-live-notify-followers.json`):**
+1. **Workflow 1 ([`01-stream-live-notify-followers.json`](./n8n-workflow/01-stream-live-notify-followers.json)):**
    - Triggered when a creator goes live.
    - Dispatches in-app inbox and push notifications to all followers with deduplication keys.
-2. **Workflow 2 (`02-viewer-milestone-alert.json`):**
+2. **Workflow 2 ([`02-viewer-milestone-alert.json`](./n8n-workflow/02-viewer-milestone-alert.json)):**
    - Tracks concurrent viewers crossing milestone thresholds (2, 10, 50, 100, 500).
    - Alerts the creator once per milestone to celebrate viewer spikes.
-3. **Workflow 3 (`03-stream-ended-highlights.json`):**
+3. **Workflow 3 ([`03-stream-ended-highlights.json`](./n8n-workflow/03-stream-ended-highlights.json)):**
    - Triggered when a broadcast concludes.
    - Analyzes chat density across 30-second sliding windows to pinpoint peak excitement moments (`0:00 – 0:30`).
    - Generates automated event recap narrative with deterministic rule-based fallback (`summary_source = 'rule'`) requiring zero paid third-party API dependencies.
-4. **Workflow 4 (`04-daily-digest.json`):**
+   - Optional 100% free Gemini Flash alternative available in [`03-stream-ended-highlights-gemini.json`](./n8n-workflow/03-stream-ended-highlights-gemini.json).
+4. **Workflow 4 ([`04-daily-digest.json`](./n8n-workflow/04-daily-digest.json)):**
    - Scheduled daily cron at 09:00 AM aggregating the top 5 broadcasts from the past 24 hours.
 
 ---
 
-## 🛠️ Repository Structure
+## 🛠️ Repository File Map & Links
 
-```
-├── mobile/                     # React Native + Expo SDK 58 mobile app
-│   ├── src/
-│   │   ├── app/                # Expo Router screen navigation
-│   │   │   ├── (auth)/         # Sign-in & sign-up screens
-│   │   │   ├── (app)/(tabs)/   # Live feed, Go-live studio, Activity inbox, Profile
-│   │   │   ├── broadcast/[id]  # Creator live studio & controls
-│   │   │   ├── watch/[id]      # Viewer streaming player & live chat
-│   │   │   └── summary/[id]    # Post-event telemetry & AI highlights
-│   │   ├── components/         # Vector icons, ChatPanel, RemoteStage, LocalPreview
-│   │   ├── hooks/              # useChat, useStreamChannel, usePresenceCount, useInbox
-│   │   ├── lib/                # supabase.ts, livekit.ts, categories.ts
-│   │   └── stores/             # session.ts (Zustand auth store)
-│   ├── app.json                # Expo config & Android permissions
-│   └── eas.json                # EAS Build profiles (Development & Preview APK)
-├── backend/                    # Supabase backend configuration
-│   ├── README.md               # Backend deployment and linking guide
-│   └── supabase/
-│       ├── functions/          # livekit-token Edge Function
-│       └── migrations/         # PostgreSQL schema, RLS policies, and RPC functions
-├── n8n-workflow/               # Production n8n automation workflows
-│   ├── 01-stream-live-notify-followers.json
-│   ├── 02-viewer-milestone-alert.json
-│   ├── 03-stream-ended-highlights.json
-│   ├── 03-stream-ended-highlights-gemini.json
-│   ├── 04-daily-digest.json
-│   └── README.md               # n8n import and credentials guide
-├── docs/
-│   └── BLUEPRINT.md            # Original 1,700-line build blueprint
-├── BUILD_LOG.md                # Running engineering log & test checklist results
-├── PROMPTS.md                  # Complete prompt history for submission
-└── cht.md                      # Engineering prompt logs
-```
+- **Mobile Client (`/mobile`):**
+  - **Navigation Roots:** [`mobile/src/app/(app)/(tabs)/index.tsx`](./mobile/src/app/(app)/(tabs)/index.tsx) (Live Discovery), [`go-live.tsx`](./mobile/src/app/(app)/(tabs)/go-live.tsx) (Studio), [`inbox.tsx`](./mobile/src/app/(app)/(tabs)/inbox.tsx) (Activity), [`profile.tsx`](./mobile/src/app/(app)/(tabs)/profile.tsx) (Profile)
+  - **Live Streaming Pages:** [`mobile/src/app/(app)/broadcast/[id].tsx`](./mobile/src/app/(app)/broadcast/[id].tsx) (Host Studio), [`mobile/src/app/(app)/watch/[id].tsx`](./mobile/src/app/(app)/watch/[id].tsx) (Viewer Player)
+  - **Post-Event Analytics:** [`mobile/src/app/(app)/summary/[id].tsx`](./mobile/src/app/(app)/summary/[id].tsx) (Recap & Peak Moments)
+  - **Core Hooks:** [`useChat.ts`](./mobile/src/hooks/useChat.ts), [`useStreamChannel.ts`](./mobile/src/hooks/useStreamChannel.ts), [`usePresenceCount.ts`](./mobile/src/hooks/usePresenceCount.ts), [`useInbox.ts`](./mobile/src/hooks/useInbox.ts)
+  - **UI Components:** [`ChatPanel.tsx`](./mobile/src/components/ChatPanel.tsx), [`Icons.tsx`](./mobile/src/components/Icons.tsx), [`ViewerBadge.tsx`](./mobile/src/components/ViewerBadge.tsx), [`RemoteStage.tsx`](./mobile/src/components/RemoteStage.tsx), [`LocalPreview.tsx`](./mobile/src/components/LocalPreview.tsx)
+  - **Build Configurations:** [`mobile/app.json`](./mobile/app.json) & [`mobile/eas.json`](./mobile/eas.json)
+- **Backend & Database (`/backend`):**
+  - **Database Migrations:**
+    - [`20261116000000_init_schema.sql`](./backend/supabase/migrations/20261116000000_init_schema.sql) — Core tables, RLS, triggers & RPCs
+    - [`20261117000000_allow_concurrent_streams.sql`](./backend/supabase/migrations/20261117000000_allow_concurrent_streams.sql) — Multi-stream support
+    - [`20261117000001_follow_and_activities_fix.sql`](./backend/supabase/migrations/20261117000001_follow_and_activities_fix.sql) — RLS policies for notifications
+    - [`20261117000002_follow_and_activities_fix.sql`](./backend/supabase/migrations/20261117000002_follow_and_activities_fix.sql) — Instant highlights & 30s moment bucketing
+  - **LiveKit Token Edge Function:** [`backend/supabase/functions/livekit-token/index.ts`](./backend/supabase/functions/livekit-token/index.ts)
+- **Automation Workflows (`/n8n-workflow`):**
+  - Workflows: [`01-stream-live-notify-followers.json`](./n8n-workflow/01-stream-live-notify-followers.json), [`02-viewer-milestone-alert.json`](./n8n-workflow/02-viewer-milestone-alert.json), [`03-stream-ended-highlights.json`](./n8n-workflow/03-stream-ended-highlights.json), [`04-daily-digest.json`](./n8n-workflow/04-daily-digest.json)
+  - Setup Documentation: [`n8n-workflow/README.md`](./n8n-workflow/README.md)
 
 ---
 
@@ -168,7 +169,7 @@ flowchart TD
 
 ## 🧪 Testing Matrix (Section 9 Acceptance)
 
-All items from the manual test checklist verified with a **100% PASS** rate:
+All items from the manual test checklist verified with a **100% PASS** rate in [`BUILD_LOG.md`](./BUILD_LOG.md):
 - **Auth:** Profile generation on sign-up, persistent sessions across restarts.
 - **Streaming:** Go Live broadcast latency <1s, creator screen share, clean stream teardown.
 - **Chat:** Idempotent delivery, strict sequence ordering, retry buttons on network drop.
