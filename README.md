@@ -4,7 +4,7 @@
 [![LiveKit SFU](https://img.shields.io/badge/LiveKit-WebRTC_SFU-002B36?style=for-the-badge&logo=webrtc&logoColor=white)](https://livekit.io)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres_%2B_Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![n8n](https://img.shields.io/badge/n8n-Workflow_Automation-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://n8n.io)
-[![Android Build](https://img.shields.io/badge/EAS_Build-Preview_APK-3880FF?style=for-the-badge&logo=android&logoColor=white)](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/4f4e2fc3-7c60-4212-8acf-396f4e50b7f3)
+[![Android Build](https://img.shields.io/badge/EAS_Build-Preview_APK-3880FF?style=for-the-badge&logo=android&logoColor=white)](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582)
 
 LiveWire is a high-performance, real-time live event streaming platform built for mobile implementing **all three challenge phases** (Phase 1: Real-Time Live Video Streaming + Chat + Presence, Phase 2: Persistent Offline Outbox Queue & Network Synchronization, and Phase 3: n8n Event Automations & Highlights). It allows content creators to broadcast high-definition video and audio with sub-second WebRTC latency, engage with audiences via synchronized live chat with offline outbox resiliency, and leverage event-driven n8n automations for follower notifications, viewer milestones, and automated post-stream highlights.
 
@@ -14,8 +14,8 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 
 | Deliverable | Description | Direct Link |
 |---|---|---|
-| **Android Universal APK** | Production internal distribution build (installs on any Android 8.0+ phone) | [📥 Download `livewire-preview.apk` (Direct Download)](https://expo.dev/artifacts/eas/HaOaoqgYtKpyr3bL772CpO9G5jCb9qyOwOhCd5LwawY.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/4f4e2fc3-7c60-4212-8acf-396f4e50b7f3) |
-| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #4f4e2fc3](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/4f4e2fc3-7c60-4212-8acf-396f4e50b7f3) |
+| **Android Universal APK** | Production internal distribution build (installs on any Android 8.0+ phone) | [📥 Download `livewire-preview.apk` (Direct Download)](https://expo.dev/artifacts/eas/8dLFL2R8B4E3N8ZShoAl8nwF6dTDLL5XzT3PmO2gIPA.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582) |
+| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #5fd47f16](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582) |
 | **Video Walkthrough (3 Min)** | 3-minute video covering Creator Go Live, Viewer Join, Chat, and Analytics | `[Link to Loom Video Demo]` |
 | **Build Blueprint** | Original 1,700-line architecture specification & build requirements | [📄 `docs/BLUEPRINT.md`](./docs/BLUEPRINT.md) |
 | **Engineering Prompt History** | Full conversational prompts and technical evolution logs | [📄 `PROMPTS.md`](./PROMPTS.md) & [📄 `cht.md`](./cht.md) |
@@ -28,7 +28,7 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 ## 📲 Android APK Installation & Testing Guide
 
 1. **Download the APK:**  
-   Tap [**Download `livewire-preview.apk`**](https://expo.dev/artifacts/eas/HaOaoqgYtKpyr3bL772CpO9G5jCb9qyOwOhCd5LwawY.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/4f4e2fc3-7c60-4212-8acf-396f4e50b7f3).
+   Tap [**Download `livewire-preview.apk`**](https://expo.dev/artifacts/eas/8dLFL2R8B4E3N8ZShoAl8nwF6dTDLL5XzT3PmO2gIPA.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582).
 2. **Install on Device:**  
    Open the downloaded file. When prompted, tap **Settings** and toggle **Allow from this source** (standard for internal distribution APKs).
 3. **Sign In with Demo Presets:**  

@@ -152,3 +152,18 @@
 - Acceptance: PASS — `npx tsc --noEmit` verified 0 errors; `npx expo export --platform android` bundled 1,751 modules with 0 errors. EAS Cloud preview build `4f4e2fc3-7c60-4212-8acf-396f4e50b7f3` completed with status finished (exit code 0); direct APK download URL: https://expo.dev/artifacts/eas/HaOaoqgYtKpyr3bL772CpO9G5jCb9qyOwOhCd5LwawY.apk
 - Time spent: 0.5 h
 
+
+## Step 18 — Production Android Release (Build #3) & UI Polish — 2026-11-17
+- Did:
+  - Hardened full-device responsiveness and adaptive safe area handling across all 10 application views with `react-native-safe-area-context`.
+  - Built interactive "Community Connections" card on Profile screen with Followers and Following lists and live 1-tap `toggleFollowUser` action.
+  - Engineered custom `tabBarButton` for the Go Live navigation tab, creating an elevated 36px hero pill with inline flexbox alignment to prevent text-icon overlap.
+  - Symmetrized bottom tab bar height, vertical centering, and balanced padding across mobile and web viewports.
+  - Successfully compiled, signed, and packaged production Android universal APK via EAS Cloud (Build #3).
+  - Direct APK download URL: `https://expo.dev/artifacts/eas/8dLFL2R8B4E3N8ZShoAl8nwF6dTDLL5XzT3PmO2gIPA.apk`
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582`
+- Broke: None.
+- Fixed: N/A.
+- Acceptance: PASS — EAS Cloud build `5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582` finished with status `finished` (exit code 0). Verified universal APK artifact generated and ready for physical Android installation.
+- Time spent: 0.5 h
+
