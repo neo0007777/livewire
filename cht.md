@@ -357,3 +357,22 @@
   - Preserved distinct red accent styling (`#EF4444`) with focused scale transform and red focus dot (`activeDotRed`).
   - Guaranteed uniform 25% screen-width distribution across all 4 tab destinations, ensuring clean responsiveness across all Android screen sizes without horizontal clipping or text overflow.
 - Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
+
+### Turn 26: Go Live Hardware Metric Redesign & Adaptive Tab Screen Bottom Insets
+**User:**
+> "fix the ui" (Screenshot of Go Live creator studio screen showing horizontal text truncation in hardware status cards and navigation bar spacing)
+
+**Action Taken:**
+- Diagnosed UI defect in `mobile/src/app/(app)/(tabs)/go-live.tsx`:
+  - Three horizontal hardware status cards (`Camera Input`, `Microphone`, `Latency`) attempted to place 32px icon wrappers alongside two text labels within ~100px card widths on mobile phones, causing labels to truncate into `Camera Inpu...`, `1080p Rea...`, `Microphone...`, and `Stereo Rea...`.
+  - Content container padding was insufficient, risking button occlusion behind bottom tab navigation on tall Android displays.
+- Redesigned hardware status indicator in `mobile/src/app/(app)/(tabs)/go-live.tsx`:
+  - Re-architected status cards into vertical centered modules (`alignItems: 'center'`, `justifyContent: 'center'`, `paddingVertical: 12`, `paddingHorizontal: 4`).
+  - Positioned rounded green icon containers at the top, centered concise titles (`Camera`, `Audio`, `Latency`) in the middle, and status badges (`1080p HD`, `Stereo HD`, `Ultra-Low`) with active indicator dots at the bottom.
+  - Added `minWidth: 0` and flex-shrink styling to account details and switcher button to prevent horizontal squeezing.
+- Applied adaptive bottom safe-area insets (`paddingBottom: Math.max(80, insets.bottom + 64)`) across all main tab screens:
+  - `go-live.tsx` (Creator Studio launch form)
+  - `index.tsx` (Live streams feed FlatList)
+  - `inbox.tsx` (Activity and notification FlatList)
+  - `profile.tsx` (Creator profile and follower connection scroll view)
+- Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors.
