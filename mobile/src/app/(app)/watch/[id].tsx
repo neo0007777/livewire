@@ -171,18 +171,17 @@ export default function WatchScreen() {
 
   return (
     <View style={styles.container}>
-      {tokenData ? (
-        <LiveKitWrapper
-          serverUrl={tokenData.url}
-          token={tokenData.token}
-          connect={true}
-          audio={false}
-          video={false}
-        >
-          <View style={styles.room}>
-            <RemoteStage channel={channel} streamId={streamId} />
+      <LiveKitWrapper
+        serverUrl={tokenData?.url || ''}
+        token={tokenData?.token || ''}
+        connect={!!tokenData}
+        audio={false}
+        video={false}
+      >
+        <View style={styles.room}>
+          <RemoteStage channel={channel} streamId={streamId} />
 
-            {/* Top Bar with Stream Info & Controls */}
+          {/* Top Bar with Stream Info & Controls */}
             <View style={[styles.topBar, { top: Math.max(insets.top + 6, Platform.OS === 'ios' ? 52 : 32) }]}>
               <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
                 <CloseIcon size={14} color="#FFF" />
@@ -277,14 +276,6 @@ export default function WatchScreen() {
             </View>
           </View>
         </LiveKitWrapper>
-      ) : (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Stream is offline or ended.</Text>
-          <TouchableOpacity style={styles.returnButton} onPress={handleBack}>
-            <Text style={styles.returnButtonText}>Back to Streams</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }

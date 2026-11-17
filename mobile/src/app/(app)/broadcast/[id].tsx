@@ -219,24 +219,23 @@ export default function BroadcastScreen() {
 
   return (
     <View style={styles.container}>
-      {tokenData ? (
-        <LiveKitWrapper
-          serverUrl={tokenData.url}
-          token={tokenData.token}
-          connect={true}
-          audio={!isMicMuted}
-          video={!isVideoMuted}
-        >
-          <View style={styles.room}>
-            <LocalPreview
-              channel={channel}
-              streamId={streamId}
-              isMicMuted={isMicMuted}
-              isVideoMuted={isVideoMuted}
-              facingMode={facingMode}
-              isScreenSharing={isScreenSharing}
-              onScreenShareChange={setIsScreenSharing}
-            />
+      <LiveKitWrapper
+        serverUrl={tokenData?.url || ''}
+        token={tokenData?.token || ''}
+        connect={!!tokenData}
+        audio={!isMicMuted}
+        video={!isVideoMuted}
+      >
+        <View style={styles.room}>
+          <LocalPreview
+            channel={channel}
+            streamId={streamId}
+            isMicMuted={isMicMuted}
+            isVideoMuted={isVideoMuted}
+            facingMode={facingMode}
+            isScreenSharing={isScreenSharing}
+            onScreenShareChange={setIsScreenSharing}
+          />
 
             {/* Top Control Bar with Status & Controls */}
             <View style={[styles.topBar, { top: Math.max(insets.top + 6, Platform.OS === 'ios' ? 52 : 28) }]}>
@@ -381,14 +380,6 @@ export default function BroadcastScreen() {
             </View>
           </View>
         </LiveKitWrapper>
-      ) : (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Unable to initiate broadcast room.</Text>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>Return</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }
