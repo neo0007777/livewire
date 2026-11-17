@@ -1,0 +1,286 @@
+{
+  "name": "03 Stream Ended -> Highlights (Gemini 100% Free)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stream-ended",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-ended",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        160,
+        300
+      ],
+      "webhookId": "stream-ended",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "webhook-secret-cred",
+          "name": "Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "id": "wait-node",
+      "name": "Wait 3 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        360,
+        300
+      ],
+      "webhookId": "wait-ended-settle"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from private.n8n_highlight_input($1::uuid);",
+        "queryParams": "={{ $('Webhook').first().json.body.stream_id }}",
+        "options": {}
+      },
+      "id": "postgres-highlight-input",
+      "name": "Load Stream and Chat Input",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        560,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-pooler-cred",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $input.first().json;\nconst msgs = Array.isArray(s.messages) ? s.messages : [];\nconst BUCKET = 30;\n\nconst buckets = new Map();\nfor (const m of msgs) {\n  const b = Math.floor((m.offset_seconds || 0) / BUCKET);\n  if (!buckets.has(b)) buckets.set(b, []);\n  buckets.get(b).push(m);\n}\nconst moments = [...buckets.entries()]\n  .sort((a, b) => b[1].length - a[1].length || a[0] - b[0])\n  .slice(0, 3)\n  .map(([b, list]) => ({\n    start_seconds: b * BUCKET,\n    end_seconds: (b + 1) * BUCKET,\n    message_count: list.length,\n    sample: list.slice(0, 3).map(m => `${m.author_name}: ${m.content}`),\n  }))\n  .sort((a, b) => a.start_seconds - b.start_seconds);\n\nconst fmt = sec => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;\nconst transcript = msgs\n  .map(m => `[${fmt(m.offset_seconds || 0)}] ${m.author_name}: ${m.content}`)\n  .join('\\n')\n  .slice(-20000);\n\nconst top = moments.length\n  ? `Busiest moment at ${fmt(moments.slice().sort((a, b) => b.message_count - a.message_count)[0].start_seconds)}.`\n  : 'Chat was quiet.';\nconst rule_summary =\n  `\"${s.title}\" ran ${Math.round(s.duration_seconds / 60)} min, peaked at ${s.peak_viewers} viewers ` +\n  `with ${s.total_messages} chat messages. ${top}`;\n\nreturn [{ json: {\n  stream_id: s.stream_id, title: s.title, total_messages: s.total_messages,\n  peak_viewers: s.peak_viewers, duration_seconds: s.duration_seconds,\n  moments, transcript, rule_summary,\n} }];"
+      },
+      "id": "code-find-moments",
+      "name": "Code - Find Moments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.total_messages }}",
+              "operation": "largerEqual",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "id": "if-ai-eligible",
+      "name": "Check Message Threshold",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{ $env.GEMINI_API_KEY || 'AIzaSyDemo' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"You write short, upbeat recaps of live-stream chat for the broadcaster. Plain text, max 70 words, no markdown.\\n\\nStream title: {{ $json.title }}\\nPeak viewers: {{ $json.peak_viewers }}\\nChat transcript:\\n{{ $json.transcript }}\\n\\nWrite the recap now:\"\n    }]\n  }]\n}",
+        "options": {
+          "continueOnFail": true
+        }
+      },
+      "id": "gemini-ai-recap",
+      "name": "Generate Free Gemini Recap",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const momentsNode = $('Code - Find Moments');\nconst base = (momentsNode && momentsNode.first() && momentsNode.first().json) ? momentsNode.first().json : {};\nconst inItem = $input.first();\nconst r = (inItem && inItem.json) ? inItem.json : {};\n\nlet geminiText = null;\nif (Array.isArray(r.candidates) && r.candidates[0]?.content?.parts) {\n  const p = r.candidates[0].content.parts.find(pt => pt && pt.text);\n  if (p && p.text) geminiText = p.text.trim();\n}\n\nlet anthropicText = null;\nif (Array.isArray(r.content)) {\n  const t = r.content.find(b => b && b.type === 'text');\n  if (t && t.text) anthropicText = t.text.trim();\n}\n\nconst aiText = geminiText || anthropicText;\nconst ok = Boolean(aiText && aiText.length > 0);\n\nreturn [{ json: {\n  stream_id: base.stream_id || r.stream_id,\n  moments: base.moments || r.moments || [],\n  summary: ok ? aiText.slice(0, 1200) : (base.rule_summary || r.rule_summary || 'Stream concluded successfully.'),\n  source: ok ? 'ai' : 'rule',\n} }];"
+      },
+      "id": "code-pick-summary",
+      "name": "Code - Pick Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select private.n8n_save_highlight($1::uuid, $2, $3, $4);",
+        "queryParams": "={{ [$json.stream_id, JSON.stringify($json.moments), $json.summary, $json.source] }}",
+        "options": {}
+      },
+      "id": "postgres-save-highlight",
+      "name": "Save Highlight in DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1600,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-pooler-cred",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from private.n8n_on_highlights_ready($1::uuid);",
+        "queryParams": "={{ $json.stream_id }}",
+        "options": {}
+      },
+      "id": "postgres-notify-highlights",
+      "name": "Notify Creator in DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1800,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "supabase-pooler-cred",
+          "name": "Supabase Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wait 3 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Load Stream and Chat Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Stream and Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Find Moments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Find Moments": {
+      "main": [
+        [
+          {
+            "node": "Check Message Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Threshold": {
+      "main": [
+        [
+          {
+            "node": "Generate Free Gemini Recap",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Pick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Free Gemini Recap": {
+      "main": [
+        [
+          {
+            "node": "Code - Pick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Pick Summary": {
+      "main": [
+        [
+          {
+            "node": "Save Highlight in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Highlight in DB": {
+      "main": [
+        [
+          {
+            "node": "Notify Creator in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

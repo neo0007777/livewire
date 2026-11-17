@@ -167,7 +167,7 @@ export default function StreamSummaryScreen() {
           {highlights?.summary_source && (
             <View style={styles.sourceBadge}>
               <Text style={styles.sourceText}>
-                {highlights.summary_source === 'ai' ? 'Claude 3.5 Haiku' : 'Automated'}
+                {highlights.summary_source === 'ai' ? 'Gemini AI Flash' : 'Automated Recap'}
               </Text>
             </View>
           )}
