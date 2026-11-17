@@ -14,8 +14,8 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 
 | Deliverable | Description | Direct Link |
 |---|---|---|
+| **Android Universal APK (Build #7 — Latest)** | Hardened release with ICE candidate queuing, SFU bypass & multi-tier resolution fallback | [📥 Download `livewire-preview-v7.apk` (Direct Download)](https://expo.dev/artifacts/eas/VuDLJmIRgSehnQ7N-qpwX6xHogquATdmxAXYXSv2z2E.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/dc0bb657-8fb0-4dae-b3c7-dd9c6e3c8c80) |
 | **Android Universal APK (Build #6)** | Production internal distribution build with native hardware WebRTC camera engine | [📥 Download `livewire-preview-v6.apk` (Direct Download)](https://expo.dev/artifacts/eas/lKZoEzeY7aD_aD2nFjmL3GTnoVlm3oH889o9-GWRxkM.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/fbd7a28a-e231-4ce9-a9d4-39ab4db84fff) |
-| **Android Universal APK (Build #7)** | Hardened release with ICE candidate queuing, SFU bypass & multi-tier resolution fallback | [🔗 EAS Build #dc0bb657](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/dc0bb657-8fb0-4dae-b3c7-dd9c6e3c8c80) |
 | **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #fbd7a28a](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/fbd7a28a-e231-4ce9-a9d4-39ab4db84fff) |
 | **Video Walkthrough (3 Min)** | 3-minute video covering Creator Go Live, Viewer Join, Chat, and Analytics | `[Link to Loom Video Demo]` |
 | **Build Blueprint** | Original 1,700-line architecture specification & build requirements | [📄 `docs/BLUEPRINT.md`](./docs/BLUEPRINT.md) |
