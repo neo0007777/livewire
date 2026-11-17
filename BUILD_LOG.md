@@ -125,3 +125,14 @@
       - [x] `private.app_config` protected from client API access: PASS
 - Acceptance: PASS — Full test checklist verified with 100% pass rate.
 - Time spent: 1.0 h
+
+
+## Step 15 & 16 — Android APK Production Build (EAS Cloud) — 2026-11-17
+- Did:
+  - Configured EAS Build profile for Android universal APK (`distribution: "internal"`, `buildType: "apk"`).
+  - Resolved R8 Proguard missing class issue (`livekit.org.jni_zero.JniZeroJni`) via `expo-build-properties` with `enableMinifyInReleaseBuilds: false` and explicit JNI keep rules.
+  - Successfully compiled, signed, and generated production Android preview APK via EAS Cloud.
+  - Direct download URL: `https://expo.dev/artifacts/eas/53BQGdjA8EWvwsiF9hhiv_E7ez3lTFaKApbdOo-6McY.apk`
+  - Build dashboard & QR code: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3`
+- Acceptance: PASS — EAS Cloud build completed with exit code 0; universal APK verified and ready for physical device installation.
+- Time spent: 0.5 h

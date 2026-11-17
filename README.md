@@ -13,7 +13,9 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 ## 📱 Deliverables & Demo Links
 
 - **Android Universal APK (EAS Cloud Build):**  
-  [Download Installable APK on Expo](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3) *(Internal distribution build — installs on any Android 8.0+ device)*
+  - **Direct APK Download:** [livewire-preview.apk](https://expo.dev/artifacts/eas/53BQGdjA8EWvwsiF9hhiv_E7ez3lTFaKApbdOo-6McY.apk)  
+  - **Expo Build Page & QR Code:** [EAS Build #76533473](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/76533473-2c18-472a-9c33-64db7e353ae3)  
+  *(Universal APK — installs directly on any Android 8.0+ phone)*
 - **Loom Video Walkthrough (3 Minutes):**  
   `[Link to Loom Video Demo]` *(3-minute walkthrough covering Creator Go Live, Viewer Join & Sub-Second Video, Real-Time Chat & Presence, and Post-Event Analytics)*
 - **Build Blueprint & Architecture Spec:**  
