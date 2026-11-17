@@ -211,4 +211,18 @@
 - Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors; Expo web production export bundled 1,007 modules with 0 errors. EAS Cloud Build #8 (`b232a0a0-5924-4827-871f-83f1be86b615`) finished with status `finished` (exit code 0). Verified universal APK artifact generated. Direct APK download URL: https://expo.dev/artifacts/eas/tm3reRohU3YqiiAo_XiXetZ061HBRvpPmD-KYYkZy0U.apk
 - Time spent: 0.5 h
 
+## Step 22 — Build #9: Native Remote MediaStream Binding Restoration & Host Audio Session — 2026-11-17
+- Did:
+  - Investigated divergence between web browser execution (working) and native Android APK (viewer black screen & audio silence).
+  - Fixed native video sink disconnection in `RemoteStage.native.tsx`: bound original `event.streams[0]` directly to state instead of instantiating `new MediaStream(allTracks)`, preserving the native C++ `streamReactTag` required by Android's `RTCVideoView`.
+  - Added `AudioSession.startAudioSession()` on broadcaster mount in `LocalPreview.native.tsx` to initialize Android's `inCommunication` audio HAL mode and route the hardware microphone.
+  - Added explicit secondary microphone capture fallback (`mediaDevices.getUserMedia({ audio: true })`) in `LocalPreview.native.tsx` if the combined camera constraints omit the audio track on specific Android OEM hardware.
+  - Added null property protection for `sdpMid` and `sdpMLineIndex` in `RTCIceCandidate` deserialization.
+  - Queued EAS Cloud Build #9 for universal Android release.
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/09688fe0-aea4-4dda-9f47-90e206bce03a`
+- Broke: None.
+- Fixed: Native Android viewer black screen from dummy MediaStream UUID and host microphone silence from uninitialized AudioSession.
+- Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors; Expo web production export bundled 1,007 modules with 0 errors. EAS Cloud Build #9 queued and running.
+- Time spent: 0.5 h
+
 
