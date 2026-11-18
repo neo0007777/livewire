@@ -20,7 +20,7 @@ The architecture implements all three assessment phases: Phase 1 (Sub-Second Web
 | **Android Universal APK** | Standalone installable release binary with hardware camera switching, display screen sharing, and native WebRTC pipeline | [Download livewire-preview-v13.apk](https://expo.dev/artifacts/eas/B8iU3O8h_E3iuRLIDDChccMapEi2FwfB9KAPx6xE7cc.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104) |
 | **Architecture Specification** | Complete architectural design document, data models, and interface definitions | [docs/BLUEPRINT.md](./docs/BLUEPRINT.md) |
 | **Verification & Test Matrix** | Full acceptance test checklist covering all Section 9 verification requirements (100% PASS) | [BUILD_LOG.md](./BUILD_LOG.md) |
-| **Engineering Prompt Logs** | Verifiable record of technical reasoning, development progression, and prompt history | [PROMPTS.md](./PROMPTS.md) & [cht.md](./cht.md) |
+| **Engineering Prompt Logs** | Verifiable record of technical reasoning, development progression, and prompt history | [PROMPTS.md](./PROMPTS.md) & [chat.md](./chat.md) |
 | **Backend Documentation** | PostgreSQL database schema, Row Level Security (RLS) policies, RPCs, and Edge Functions | [backend/README.md](./backend/README.md) |
 | **n8n Automation Bundle** | Production workflow exports, schema definitions, and credentials configuration guide | [n8n-workflow/README.md](./n8n-workflow/README.md) \| [n8n-all-workflows-export.json](./n8n-workflow/n8n-all-workflows-export.json) |
 
