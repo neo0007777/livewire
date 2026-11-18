@@ -56,6 +56,7 @@ export function LocalPreview({
   const pendingIceRef = useRef<Map<string, RTCIceCandidate[]>>(new Map());
   const peerCreationTimeRef = useRef<Map<string, number>>(new Map());
   const currentFacingRef = useRef<'user' | 'environment'>(facingMode);
+  const isSwitchingRef = useRef(false);
 
   // Start native AudioSession on host to initialize Android AudioManager and hardware microphone
   useEffect(() => {
@@ -172,66 +173,94 @@ export function LocalPreview({
   }, []);
 
   // Dedicated helper to switch camera hardware without breaking peer connections
-  const switchCameraFacing = useCallback(async (facing: 'user' | 'environment') => {
-    if (isScreenSharing) return;
+  const switchCameraFacing = useCallback(async (targetFacing: 'user' | 'environment') => {
+    if (isScreenSharing || isSwitchingRef.current) return;
+    isSwitchingRef.current = true;
 
-    const currentTrack = streamRef.current?.getVideoTracks()[0];
-    if (!currentTrack) {
-      initHardwareCamera(facing);
-      return;
-    }
+    try {
+      // 1. Enumerate available video devices
+      const devices = (await mediaDevices.enumerateDevices()) as any[];
+      const videoDevices = Array.isArray(devices) ? devices.filter((d) => d.kind === 'videoinput') : [];
 
-    let success = false;
-    // Attempt 1: Standard W3C applyConstraints in react-native-webrtc
-    if (typeof (currentTrack as any).applyConstraints === 'function') {
-      try {
-        await (currentTrack as any).applyConstraints({
-          facingMode: facing,
-          width: 1280,
-          height: 720,
-        });
-        currentFacingRef.current = facing;
-        success = true;
-      } catch (err) {
-        // Fall through to seamless track replacement fallback
+      // Find the specific camera matching the desired facing mode
+      let targetDevice: any = null;
+      if (targetFacing === 'environment') {
+        targetDevice =
+          videoDevices.find((d) => d.facing === 'environment' || d.facing === 'back') ||
+          videoDevices.find((d) => d.facing !== 'front' && d.facing !== 'user') ||
+          (videoDevices.length > 1 ? videoDevices[0] : null);
+      } else {
+        targetDevice =
+          videoDevices.find((d) => d.facing === 'front' || d.facing === 'user') ||
+          (videoDevices.length > 1 ? videoDevices[1] : videoDevices[0]);
       }
-    }
 
-    // Attempt 2: If applyConstraints fails, seamlessly acquire the target camera track
-    if (!success) {
-      try {
-        const newStream = (await mediaDevices.getUserMedia({
-          video: { facingMode: facing, width: 1280, height: 720 },
-          audio: false,
-        })) as MediaStream;
+      // 2. Stop old video track to release Android hardware camera
+      const oldVideoTrack = streamRef.current?.getVideoTracks()[0];
+      if (oldVideoTrack) {
+        oldVideoTrack.stop();
+        streamRef.current?.removeTrack(oldVideoTrack);
+      }
 
-        const newTrack = newStream.getVideoTracks()[0];
-        if (newTrack && streamRef.current) {
-          const oldTrack = streamRef.current.getVideoTracks()[0];
-          if (oldTrack) {
-            streamRef.current.removeTrack(oldTrack);
-            oldTrack.stop();
+      // 3. Acquire new camera stream with target facing/deviceId
+      let newStream: MediaStream | null = null;
+      const candidateConstraints = [
+        targetDevice?.deviceId
+          ? { video: { deviceId: { exact: targetDevice.deviceId }, width: 1280, height: 720 }, audio: false }
+          : null,
+        targetDevice?.deviceId
+          ? { video: { deviceId: targetDevice.deviceId }, audio: false }
+          : null,
+        { video: { facingMode: targetFacing, width: 1280, height: 720 }, audio: false },
+        { video: { facingMode: targetFacing, width: 640, height: 480 }, audio: false },
+        { video: { facingMode: targetFacing }, audio: false },
+        { video: true, audio: false },
+      ].filter(Boolean);
+
+      for (const c of candidateConstraints) {
+        try {
+          newStream = (await mediaDevices.getUserMedia(c as any)) as MediaStream;
+          if (newStream && newStream.getVideoTracks().length > 0) {
+            break;
           }
-          newTrack.enabled = !isVideoMuted;
-          streamRef.current.addTrack(newTrack);
-          currentFacingRef.current = facing;
-
-          // Swap track seamlessly on all active viewer peer connections without renegotiation
-          peersRef.current.forEach((pc) => {
-            const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
-            if (sender) {
-              sender.replaceTrack(newTrack).catch(() => {});
-            }
-          });
-
-          // Trigger state re-render for local RTCView preview
-          setLocalStream(streamRef.current);
+        } catch (e) {
+          // Fall through to next constraint tier
         }
-      } catch (e) {
-        console.warn('[LocalPreview.native] Camera switch fallback error:', e);
       }
+
+      if (!newStream || newStream.getVideoTracks().length === 0) {
+        throw new Error('Could not acquire camera for facing: ' + targetFacing);
+      }
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      newVideoTrack.enabled = !isVideoMuted;
+
+      // 4. Preserve existing microphone audio track
+      const audioTrack = streamRef.current?.getAudioTracks()[0];
+      if (audioTrack) {
+        newStream.addTrack(audioTrack);
+      }
+
+      // 5. Replace video track on all active viewer peer connections without renegotiation
+      peersRef.current.forEach((pc) => {
+        const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
+        if (sender && newVideoTrack) {
+          sender.replaceTrack(newVideoTrack).catch((err) => {
+            console.warn('[LocalPreview.native] replaceTrack error:', err);
+          });
+        }
+      });
+
+      // 6. Update local stream reference and trigger state update
+      streamRef.current = newStream;
+      setLocalStream(newStream);
+      currentFacingRef.current = targetFacing;
+    } catch (err) {
+      console.warn('[LocalPreview.native] switchCameraFacing error:', err);
+    } finally {
+      isSwitchingRef.current = false;
     }
-  }, [isScreenSharing, isVideoMuted, initHardwareCamera]);
+  }, [isScreenSharing, isVideoMuted]);
 
   // Handle camera flip when facingMode prop changes
   useEffect(() => {
