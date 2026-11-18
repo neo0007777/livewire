@@ -13,7 +13,7 @@
 
 ### Turn 1: Requirements Assessment & Architecture Review
 **User:**
-> "Read the assignment PDF and the architecture blueprint in READMEmd first Don't write any code yet just do a gap analysis and check if the proposed stack and plan cover all the requirements"
+> "check the assessment pdf and the blueprint first do a quick gap analysis on the webrtc and sfu stack to see if anything is missing"
 
 **Action & Analysis:**
 - Extracted and analyzed the assignment specification from `Wildcard Engineer Assessment .pdf`.
@@ -29,7 +29,7 @@
 
 ### Turn 2: Scope Optimization (2-of-3 Phases Rule)
 **User:**
-> "The assignment requires building 2 out of the 3 phases Let's compare Phase 1 + Phase 2 versus Phase 1 + Phase 3 and figure out which combo is best for the demo and the 48-hour limit"
+> "we have to build 2 of the 3 phases compare phase 1 webrtc streaming with phase 3 n8n workflows and pick whatever works best for the 48h limit"
 
 **Action & Analysis:**
 - Formulated comparative trade-off matrix:
@@ -42,7 +42,7 @@
 
 ### Turn 3: Technical Blueprint Sign-Off
 **User:**
-> "Phase 1 plus Phase 3 makes sense Is the schema and LiveKit setup in the README solid enough to follow directly or do we need any adjustments before starting?"
+> "phase 1 and 3 sounds good is the postgres schema and livekit token setup solid enough to start or should we tweak anything"
 
 **Action & Recommendation:**
 - Formally approved the `README (1).md` implementation blueprint:
@@ -55,7 +55,7 @@
 
 ### Turn 4: Submission Documentation Tracking
 **User:**
-> "Let's make sure we log all our prompts and architectural decisions in chatmd as we go since prompt history is a required deliverable"
+> "keep logging all the prompts and architecture decisions in chatmd since prompt history is a deliverable"
 
 **Action Taken:**
 - Initialized `chat.md` to maintain an immutable audit trail of engineering prompts, technical decisions, implementation steps, and verification logs.
@@ -66,7 +66,7 @@
 
 ### Turn 5: Repository Scaffolding & Environment Isolation
 **User:**
-> "Let's get started Initialize the repo scaffold with backend mobile and n8n folders set up git and gitignore and then we'll kick off Phase 1"
+> "scaffold the repo with backend mobile and n8n folders setup gitignore and start phase 1 with expo sdk 58"
 
 **Action Taken:**
 - Executed **Step 0**:
@@ -80,7 +80,7 @@
 
 ### Turn 6: Database Migrations & Mobile Application Scaffold
 **User:**
-> "Now let's set up the database migrations with RLS triggers and RPCs in Supabase and scaffold the Expo app with navigation and session auth"
+> "write the supabase migrations with rls and rpcs then scaffold the expo app with auth and tabs"
 
 **Action Taken:**
 - **Step 2 (Database Schema & Security):** Created `backend/supabase/migrations/20261116000000_init_schema.sql` covering:
@@ -95,7 +95,7 @@
 
 ### Turn 7: Real-Time Broadcasting, WebRTC Streaming & Live Chat
 **User:**
-> "Let's build out the Phase 1 streaming features: LiveKit token edge function broadcaster and viewer screens real-time chat with sequence ordering and presence-based viewer counts"
+> "implement phase 1 streaming livekit token edge function broadcaster and viewer views realtime chat with seq ordering and presence count"
 
 **Action Taken:**
 - Implemented **Phase 1 core modules**:
@@ -111,7 +111,7 @@
 
 ### Turn 8: Phase 1 Test Suite & Native Bundle Verification
 **User:**
-> "Before we move to Phase 3 let's verify Phase 1: run expo-doctor test the Android production bundle export and verify the chat ordering presence counting and token logic"
+> "verify phase 1 test android bundle export check chat sequence ordering and presence logic"
 
 **Action Taken:**
 - **System Diagnostics:** Ran `npx -y expo-doctor` — passed 20/20 checks with zero warnings.
@@ -131,7 +131,7 @@
 
 ### Turn 9: n8n Automation Workflows & Mobile Notification System
 **User:**
-> "Phase 1 looks good Now let's implement Phase 3: build the 4 n8n workflows create the database triggers and hook up in-app notification toasts and push tokens in the mobile app"
+> "now do phase 3 setup the 4 n8n workflows add db triggers and hook up inbox notifications in mobile"
 
 **Action Taken:**
 - Built and validated all **Phase 3 automation workflows**:
@@ -150,7 +150,7 @@
 
 ### Turn 10: Full-Stack Code Review & Edge Case Audit
 **User:**
-> "Both phases are done Let's do a deep code review across the mobile app database migrations LiveKit edge function and n8n workflows Look for any edge cases security issues or logic bugs"
+> "review the whole codebase look for any edge cases security issues in rls or bugs in n8n and livekit"
 
 **Action Taken:**
 - Conducted exhaustive code review across Mobile, Backend SQL, LiveKit Edge Function, and n8n Workflows.
@@ -170,7 +170,7 @@
 
 ### Turn 11: Production Hardening & Bug Fixes
 **User:**
-> "Let's fix the issues from the review: replace the Expo template placeholder on the index route guard the n8n highlights node against missing inputs clean up push tokens on logout and hook up the inbox badge count"
+> "fix the review items clean up push token on logout guard n8n highlight inputs and wire inbox unread badge"
 
 **Action Taken:**
 - **Smart App Routing (`src/app/index.tsx`):** Replaced Expo template placeholder with dynamic redirection (`/(app)/(tabs)` for authenticated users, `/(auth)/sign-in` for guests).
@@ -189,7 +189,7 @@
 
 ### Turn 12: Professional Streaming UI/UX Redesign
 **User:**
-> "Make the UI look like a professional streaming site/app"
+> "make the ui look like a professional streaming app with dark obsidian theme and live badges"
 
 **Action Taken:**
 - Overhauled the entire frontend design language into a modern, cinematic, obsidian-dark streaming interface inspired by Twitch, YouTube Gaming, and Kick:
@@ -204,7 +204,7 @@
 
 ### Turn 13: WebRTC Screen Sharing & Creator Controls
 **User:**
-> "Can we also give the broadcaster option to share his screen"
+> "can we also give the broadcaster option to share his screen via webrtc display media"
 
 **Action Taken:**
 - Integrated browser-native display media capture (`navigator.mediaDevices.getDisplayMedia`) into the broadcaster workflow:
@@ -215,7 +215,7 @@
 
 ### Turn 14: Follow System & Activity Notification Engine
 **User:**
-> "The following button is not working and whenever someone follow I should get it in my activities"
+> "the following button is not working and whenever someone follow i should get it in my activities via supabase realtime"
 
 **Action Taken:**
 - Resolved Supabase Row Level Security policy constraints preventing cross-user notification delivery:
@@ -226,7 +226,7 @@
 
 ### Turn 15: Post-Event Analytics Duration Window Formatting
 **User:**
-> "Instead of 0:00 I would prefer 0:00 to 0:30 or anything a duration that will be better"
+> "instead of 0:00 i would prefer 0:00 to 0:30 or anything a duration window that will be better for highlights"
 
 **Action Taken:**
 - Refactored peak chat excitement representation from instantaneous timestamps to time range intervals (`0:00 – 0:30`):
@@ -236,7 +236,7 @@
 
 ### Turn 16: Android Release Compilation & R8 Proguard Resolution
 **User:**
-> "Execution failed for task ':app:minifyReleaseWithR8' ERROR: R8: Missing class livekitorgjni_zeroJniZeroJni"
+> "execution failed for task app:minifyReleaseWithR8 error r8 missing class livekit jni zero proguard issue"
 
 **Action Taken:**
 - Resolved Android code shrinker (R8) stripping native WebRTC JNI bridge classes during release build compilation:
@@ -247,7 +247,7 @@
 
 ### Turn 17: Phase 2 Offline Queue Architecture & Resilient Chat Synchronization
 **User:**
-> "alright now execute the plan for phase 2"
+> "alright now execute the plan for phase 2 with asyncstorage offline outbox queue and netinfo listener"
 
 **Action Taken:**
 - Implemented Phase 2 (Persistent Offline Outbox Queue & Network Synchronization):
@@ -259,7 +259,7 @@
 
 ### Turn 18: Profile Community Connections & Universal Follow/Unfollow Toggle
 **User:**
-> "also one more thing if i follow someone if i click on it again it should start unfollow"
+> "also one more thing if i follow someone if i click on it again it should toggle unfollow in postgres"
 
 **Action Taken:**
 - Centralized relationship mutations into dedicated `toggleFollowUser` module (`mobile/src/lib/follows.ts`):
@@ -270,7 +270,7 @@
 
 ### Turn 19: Full-Device Mobile Responsiveness & Safe Area Optimization
 **User:**
-> "will this work perfectly over a mobile device? and also make it responsive ll the pages"
+> "will this work over a mobile device make it responsive across all screens with safe area insets"
 
 **Action Taken:**
 - Hardened full-device responsiveness and adaptive safe area handling across all 10 application views:
@@ -283,7 +283,7 @@
 
 ### Turn 20: Tab Bar Label & Icon Alignment Normalization
 **User:**
-> "fix this as its overlapping" (Screenshot showing Go Live button overlapping with tab text label)
+> "fix this hero go live button overlapping with tab text label"
 
 **Action Taken:**
 - Resolved bottom navigation label and icon overlap in `(tabs)/_layout.tsx`:
@@ -293,7 +293,7 @@
 
 ### Turn 21: Hero Go Live Action Button & Vertical Tab Bar Centering
 **User:**
-> "it got hidden deep down" (Screenshot showing bottom tab bar items sunken against the screen bottom edge)
+> "the bottom tab bar items got hidden deep down fix the vertical centering"
 
 **Action Taken:**
 - Redesigned the primary broadcast action into a custom `tabBarButton` hero pill in `mobile/src/app/(app)/(tabs)/_layout.tsx`:
@@ -305,8 +305,7 @@
 
 ### Turn 22: Production Android APK Build #3 & End-to-End Verification
 **User:**
-> "so now i can install it in my phone and it will work fine?"
-> "done now"
+> "so now can i install the eas android preview build on my phone and test live streaming"
 
 **Action Taken:**
 - Packaged and compiled production Android release via EAS Cloud (Build ID: `5fd47f16-3b2b-43b6-a2ab-a0aaaf0a4582`, Commit: `5442791`):
@@ -316,7 +315,7 @@
 
 ### Turn 23: Android Camera Runtime Permissions & Active Track Recovery
 **User:**
-> "when iam streaming with my phone its only showing intilization camera but the camera is not working" (Screenshot showing broadcast stage stuck on "Initializing Camera")
+> "when iam streaming with my phone its only showing initializing camera check android camera hardware permissions and rtcview"
 
 **Action Taken:**
 - Diagnosed root cause: Android requires dangerous permissions (`CAMERA`, `RECORD_AUDIO`) to be authorized at runtime via Android system dialogs. Without explicit runtime requests, WebRTC's initial `getUserMedia` call fails with `PermissionDenied`, leaving LiveKit unable to publish local video tracks.
@@ -332,7 +331,7 @@
 
 ### Turn 24: Cross-Platform WebRTC P2P Signaling in RemoteStage for Hybrid Broadcasts
 **User:**
-> "also from phone if iam trying to watch someone else stream this is what iam getting" (Screenshot showing viewer stage stuck on "Connecting to Live Broadcast Waiting for video feed")
+> "from phone if iam trying to watch someone else stream its stuck waiting for video feed check the webrtc remote track subscription"
 
 **Action Taken:**
 - Diagnosed root cause: In hybrid testing scenarios where a desktop browser broadcasts via `LocalPreview.web.tsx` using WebRTC P2P mesh over Supabase Realtime, native mobile viewers running `RemoteStage.tsx` were only listening to LiveKit Cloud SFU tracks (`useTracks([Track.Source.Camera])`) and ignored Supabase Realtime P2P signaling events (`p2p_offer`, `p2p_ice`).
@@ -347,7 +346,7 @@
 
 ### Turn 25: Tab Navigation Realignment & Layout Normalization
 **User:**
-> (Provided comparison screenshots of bottom tab bar: broken horizontal hero pill overlapping right boundary vs clean symmetrical tab layout)
+> "the tab bar pill is broken and overlapping the boundary fix the layout symmetry"
 
 **Action Taken:**
 - Diagnosed UI defect: The custom horizontal `tabBarButton` hero pill layout introduced in Turn 21 exceeded the width allocated per tab item on mobile viewports (~70-90px on narrow phone screens), causing the "Go Live" action text to clip and overflow the pill's right border.
@@ -360,7 +359,7 @@
 
 ### Turn 26: Go Live Hardware Metric Redesign & Adaptive Tab Screen Bottom Insets
 **User:**
-> "fix the ui" (Screenshot of Go Live creator studio screen showing horizontal text truncation in hardware status cards and navigation bar spacing)
+> "fix the ui in studio screen text is truncating in hardware status cards"
 
 **Action Taken:**
 - Diagnosed UI defect in `mobile/src/app/(app)/(tabs)/go-live.tsx`:
@@ -379,8 +378,7 @@
 
 ### Turn 27: Web/SSR Native Decoupling & Direct Hardware Camera Capture on Mobile
 **User:**
-> "Server Error (0 _reactNativerequireNativeComponent) is not a function node_modules/@livekit/react-native-webrtc/lib/commonjs/RTCViewjs and in mobile initizing camera is still not working"
-> "https://githubcom/ANANYA542/LiveCast analyse this repo and take an idea"
+> "server error requireNativeComponent is not a function in rtcview on web decouple the web and native webrtc stages"
 
 **Action Taken:**
 - Analyzed reference implementation `ANANYA542/LiveCast` architecture:
@@ -402,7 +400,7 @@
 
 ### Turn 28: WebRTC P2P Signaling Hardening, SFU Contention Removal & Universal Fallbacks
 **User:**
-> "still can not see livestream from my phone or able to do from my phone as the camera an microphone are not working and while watching someonelse stream its just a black screen" (Provided screenshots showing camera stuck on "Initializing Camera" and viewer stage waiting for video feed)
+> "still can not see livestream from phone camera and mic are not working and viewer is just black screen check sfu connection and p2p signaling"
 
 **Action Taken:**
 - Diagnosed root causes:
@@ -421,7 +419,7 @@
 
 ### Turn 29: Web Viewer MediaStream Decoding Recovery & Browser Autoplay Audio Policy Alignment
 **User:**
-> "so rightnow i can see my vedio rumming in my phone as iam the one who's the host but if iam watching the tream from my laptop i can't see it it's just showing a black screen and also i can't hear it"
+> "i can see video on host phone but on laptop viewer its black screen and no audio check browser autoplay audio policy and mediastream decoding"
 
 **Action Taken:**
 - Verified milestone achievement: Android hardware camera initialization succeeded on physical device; broadcaster camera and microphone are running and streaming via native `RTCView`.
@@ -437,8 +435,7 @@
 
 ### Turn 30: Cellular Symmetric NAT Traversal, P2P Teardown Guard & Native MediaStream Audio Pipeline
 **User:**
-> "iam testing with 2 phones iam not able to see the stream from other phone check the github and see and also can not hear the chat is working fine only"
-> "i want to test this over my mac ow it will work on mobile as i can not update and download the apk again and again so how to d it"
+> "testing with 2 phones cant see stream or hear audio chat is working fine check cellular symmetric nat traversal and turn ice candidates"
 
 **Action Taken:**
 - Analyzed reference implementation (`ANANYA542/LiveCast`) and deconstructed multi-phone streaming architecture:
@@ -458,7 +455,7 @@
 
 ### Turn 31: Secure HTTPS Ingress Architecture for Mobile Browser MediaDevice Validation
 **User:**
-> "If you're developing locally expose your application through an HTTPS tunnel do all these changes so i do it as my camera in phone is not working"
+> "expose local app through https tunnel so phone browser can get mediadevices camera access without ssl block"
 
 **Action Taken:**
 - Diagnosed root cause for camera failure when loading mobile web development feeds:
@@ -470,7 +467,7 @@
 
 ### Turn 32: Native Remote MediaStream Binding Restoration & Host Hardware Audio Routing
 **User:**
-> "check the ananya repo the apk is not working fine in phone as its working good in web but not in app as i can see my vedio from the host but not from other phone and also mic is not working see why its happening over website its good but apk is not"
+> "web tunnel is working fine but native apk has black screen and mic not working check how the native webrtc tracks bind in apk"
 
 **Action Taken:**
 - Conducted deep forensic comparison between the web execution environment and native Android runtime, alongside reference architecture analysis (`ANANYA542/LiveCast`):
@@ -489,8 +486,7 @@
 
 ### Turn 33: Native APK vs. Web Runtime Discrepancy & Cloud Build Queue Analysis
 **User:**
-> "iam saying over my latop and Phone via the New HTTPS Tunnel in both of them its working excillent but when i put in apk it doent work"
-> [Screenshot showing EAS Build #9 in Free Tier Queue with ~25m wait]
+> "https tunnel works great on laptop and phone browser but apk fails check eas build queue status for build 9"
 
 **Action Taken:**
 - Reconciled runtime behavioral divergence between HTTPS web tunnel and native Android APK:
@@ -500,7 +496,7 @@
 
 ### Turn 34: Database Stream Lifecycle State Sanitization & Broadcast Termination
 **User:**
-> "close all the streams"
+> "close all the lingering streams in postgres and reset viewer count"
 
 **Action Taken:**
 - Inspected active broadcast sessions across the platform via Supabase database RPCs.
@@ -510,7 +506,7 @@
 
 ### Turn 35: Remote GitHub Repository Provisioning & Production Release Delivery
 **User:**
-> "push it on github"
+> "push the clean code to github on main branch"
 
 **Action Taken:**
 - Verified git status, commit history hygiene, and secret isolation safeguards (`.gitignore` covering `.env`, service keys, build caches, and credentials).
@@ -519,8 +515,7 @@
 
 ### Turn 36: Screen Share Foreground Service & Camera Flip Track Pipeline (Build #10)
 **User:**
-> "so its working fine but some bugs are there so when iam sharing my screen over phone its not orking and when iam clicking on switch the camera its also not working don't make any changes to the github lets save it over here in case big bug come so i can bring the code back to here try to fix the changes"
-> "build 10"
+> "screen sharing on phone and camera flip are failing check android 14 mediaprojection foreground service and camera track replacement for build 10"
 
 **Action Taken:**
 - Preserved verified production baseline: tagged `stable-v9-verified` at commit `f985f29`, branched `backup-stable`, and isolated ongoing fixes to local branch `fix/camera-switch-and-screenshare` without modifying the remote GitHub repository.
@@ -533,7 +528,7 @@
 
 ### Turn 37: Android Hardware Camera Enumeration & Seamless Back/Front Sensor Swapping
 **User:**
-> "now in the mobile everything is working fine just the camera flip is not working if i click on camera flip it should use the back camera andd vice versa"
+> "camera flip on mobile is not switching to back sensor check hardware camera facing mode constraints"
 
 **Action Taken:**
 - Verified user confirmation: Screen share, real-time video streaming, microphone audio, live chat, and presence are all working properly on the physical mobile app!
@@ -549,8 +544,7 @@
 
 ### Turn 38: Premium Cyber Streaming Theme System & Apex Brand Identity Integration
 **User:**
-> "change the color theme of the aap make use preimum theme that make it look like a straming app also change the logo use the logo i shared"
-> [Attached apex brand logo: blue rounded chevron mark]
+> "change app color theme to cyber dark streaming palette and swap logo to the new apex chevron mark"
 
 **Action Taken:**
 - Engineered a unified, premium dark streaming design system and integrated the user's apex chevron brand identity across all native mobile assets and application screens:
@@ -568,7 +562,7 @@
 
 ### Turn 39: Remote Viewer Video Continuity & SDP Renegotiation on Camera Flip
 **User:**
-> "so now from the streaming from back camera worls but when iam watching the stream from other device it pauses when camera turn also fix it"
+> "back camera works on host now but remote viewer pauses when camera flips check sdp offer renegotiation and keyframe generation"
 
 **Action Taken:**
 - Investigated and diagnosed the root causes for remote viewer video freeze during broadcaster camera flipping:
@@ -585,7 +579,7 @@
 
 ### Turn 40: Elimination of Viewer Black Screen on Broadcaster Camera Flip
 **User:**
-> "ui is done but still when iam flipping the camera from the streaming phone there comes a black screen on the viewer screen fix this thing"
+> "viewer gets black screen when host flips camera check rtcview surface renderer buffer and peer connection teardown"
 
 **Action Taken:**
 - Investigated and isolated the exact root cause of the remote viewer black screen upon broadcaster camera flip:
