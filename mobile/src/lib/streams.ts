@@ -50,11 +50,14 @@ export async function startStream(title: string): Promise<StreamData> {
           data: { stream_id: stream.id },
           dedupe_key: `live:${stream.id}:${f.follower_id}`,
         }));
-        await supabase.from('notifications').insert(notifs);
+        const { error: insertErr } = await supabase.from('notifications').insert(notifs);
+        if (insertErr) {
+          console.warn('[streams] Follower notifications insert status:', insertErr.message);
+        }
       }
     }
   } catch (err) {
-    // Best-effort notification delivery
+    console.warn('[streams] Notification delivery error:', err);
   }
 
   return stream;
