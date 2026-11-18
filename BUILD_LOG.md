@@ -225,4 +225,20 @@
 - Acceptance: PASS — TypeScript compile check (`npx tsc --noEmit`) passes with 0 errors; Expo web production export bundled 1,007 modules with 0 errors. EAS Cloud Build #9 (`09688fe0-aea4-4dda-9f47-90e206bce03a`) finished with status `finished` (exit code 0). Verified universal APK artifact generated and ready for device deployment. Direct APK download URL: https://expo.dev/artifacts/eas/j83x5g3tavK9wTmsrrwD-2N5KJZiO5MdWG6A-dpblpE.apk
 - Time spent: 0.5 h
 
+## Step 23 — Build #10: Screen Share Foreground Service & Seamless Camera Flip Track Replacement — 2026-11-18
+- Did:
+  - Preserved verified production baseline: tagged `stable-v9-verified` at commit `f985f29`, branched `backup-stable`, and kept remote GitHub untouched.
+  - Enabled Android 14+ `FOREGROUND_SERVICE_MEDIA_PROJECTION` permissions and configured `enableScreenShareService: true` in `@livekit/react-native-expo-plugin`.
+  - Implemented native `mediaDevices.getDisplayMedia()` in `LocalPreview.native.tsx`, connecting Android's native screen recording dialog and hot-swapping video tracks on all active viewer peer connections via `sender.replaceTrack(screenTrack)`.
+  - Added notification bar screen share teardown listener (`screenTrack.onended`).
+  - Resolved camera flip failure by replacing missing `_settings.facingMode` with W3C `applyConstraints({ facingMode })` and a seamless `getUserMedia({ video: { facingMode } })` fallback that updates senders without dropping the live broadcast or audio.
+  - Successfully compiled, signed, and generated universal Android release APK via EAS Cloud Build #10.
+  - Direct APK download URL: `https://expo.dev/artifacts/eas/RaDR_YFuOIypMaFCroLjzADrslDSc_0JeX_f4MC_0Hk.apk`
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/86e81853-6a38-4b38-85fe-098243c92954`
+- Broke: None.
+- Fixed: Resolved screen sharing failure and camera flipping on physical Android devices.
+- Acceptance: PASS — EAS Cloud Build #10 (`86e81853-6a38-4b38-85fe-098243c92954`) finished with status `finished` (exit code 0). Verified universal APK artifact generated.
+- Time spent: 0.5 h
+
+
 
