@@ -240,5 +240,22 @@
 - Acceptance: PASS — EAS Cloud Build #10 (`86e81853-6a38-4b38-85fe-098243c92954`) finished with status `finished` (exit code 0). Verified universal APK artifact generated.
 - Time spent: 0.5 h
 
+## Step 24 — Build #11: Premium Cyber Streaming Theme, Brand Apex Logo & Android Camera Flip — 2026-11-18
+- Did:
+  - Addressed user request for camera flip between back and front cameras, premium streaming app color theme, and apex logo integration.
+  - Investigated `@livekit/react-native-webrtc` Android source (`CameraCaptureController.java`): discovered that `applyConstraints` explicitly rejects modifying `facingMode` or `deviceId`, leaving the original camera active.
+  - Re-engineered camera flip in `LocalPreview.native.tsx`: dynamically enumerates physical video devices via `mediaDevices.enumerateDevices()` to locate target sensor (`environment`/back vs `front`/user), stops previous video track with a 60ms settling pause to release Android hardware camera locks, acquires target camera via `getUserMedia({ video: { deviceId } })`, hot-swaps active peer connection senders via `sender.replaceTrack(newVideoTrack)`, and sets dynamic mirroring (`mirror={facingMode === 'user'}`).
+  - Built centralized dark streaming theme in `mobile/src/lib/theme.ts`: deep obsidian base (`#080B14`), midnight indigo card surfaces (`#0F162A` / `#151E38`), subtle cyber cyan glass borders (`rgba(56, 189, 248, 0.12)`), electric cyan / sapphire accents (`#00E5FF` / `#0284C7`), and pulsing laser crimson live indicators (`#FF2A54`).
+  - Extracted user's apex chevron logo and generated high-resolution production assets (`icon.png` 1024x1024, `splash-icon.png` 512x512, `android-icon-foreground.png`, `android-icon-background.png`, `android-icon-monochrome.png`, `favicon.png`), and configured `app.json`.
+  - Added `<ApexBrandLogo />` component in `Icons.tsx` and integrated it across Live home feed, Sign In, and Sign Up headers.
+  - Successfully compiled, signed, and generated universal Android release APK via EAS Cloud Build #11.
+  - Direct APK download URL: `https://expo.dev/artifacts/eas/RfDd_zyy5acBAF9Ivla0ra5tFO_9Dg1hTBbpbtw5pm8.apk`
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/6b75e07c-3ab0-41f5-89a9-c0803aee408e`
+- Broke: None.
+- Fixed: Resolved camera flip between back and front cameras, modernized app color theme to cyber streaming palette, and integrated new apex brand identity.
+- Acceptance: PASS — EAS Cloud Build #11 (`6b75e07c-3ab0-41f5-89a9-c0803aee408e`) finished with status `finished` (exit code 0). Verified universal APK artifact generated.
+- Time spent: 0.5 h
+
+
 
 
