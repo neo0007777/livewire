@@ -17,7 +17,7 @@ The architecture implements all three assessment phases: Phase 1 (Sub-Second Web
 | Deliverable | Description | Direct Access Link |
 |---|---|---|
 | **Video Walkthrough (Loom)** | Comprehensive end-to-end presentation showing broadcaster studio, sub-second WebRTC viewer playback, synchronized chat, offline outbox recovery, and active n8n workflows | [https://www.loom.com/share/0c5572e0d8de48b685f04ab0738f1832](https://www.loom.com/share/0c5572e0d8de48b685f04ab0738f1832) |
-| **Android Universal APK (Build #13)** | Standalone installable release binary with hardware camera switching, display screen sharing, and native WebRTC pipeline | [Download livewire-preview-v13.apk](https://expo.dev/artifacts/eas/B8iU3O8h_E3iuRLIDDChccMapEi2FwfB9KAPx6xE7cc.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104) |
+| **Android Universal APK** | Standalone installable release binary with hardware camera switching, display screen sharing, and native WebRTC pipeline | [Download livewire-preview-v13.apk](https://expo.dev/artifacts/eas/B8iU3O8h_E3iuRLIDDChccMapEi2FwfB9KAPx6xE7cc.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104) |
 | **Architecture Specification** | Complete architectural design document, data models, and interface definitions | [docs/BLUEPRINT.md](./docs/BLUEPRINT.md) |
 | **Verification & Test Matrix** | Full acceptance test checklist covering all Section 9 verification requirements (100% PASS) | [BUILD_LOG.md](./BUILD_LOG.md) |
 | **Engineering Prompt Logs** | Verifiable record of technical reasoning, development progression, and prompt history | [PROMPTS.md](./PROMPTS.md) & [cht.md](./cht.md) |
