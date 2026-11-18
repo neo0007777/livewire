@@ -33,6 +33,7 @@ const ICE_SERVERS = [
 
 export function RemoteStage({ channel }: RemoteStageProps) {
   const [p2pStream, setP2pStream] = useState<MediaStream | null>(null);
+  const [renderKey, setRenderKey] = useState(0);
   const [isCreatorVideoPaused, setIsCreatorVideoPaused] = useState(false);
   const [isCreatorMicMuted, setIsCreatorMicMuted] = useState(false);
   const [isCreatorScreenSharing, setIsCreatorScreenSharing] = useState(false);
@@ -86,10 +87,17 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       if (stream) {
         stream.getTracks().forEach((t: any) => {
           t.enabled = true;
+          t.onunmute = () => {
+            if (isMounted) setRenderKey((k) => k + 1);
+          };
         });
         setP2pStream(stream);
+        setRenderKey((k) => k + 1);
       } else if (event.track) {
         event.track.enabled = true;
+        event.track.onunmute = () => {
+          if (isMounted) setRenderKey((k) => k + 1);
+        };
         const remoteStreams = (pc as any)._remoteStreams;
         if (remoteStreams && remoteStreams.size > 0) {
           const firstStream = Array.from(remoteStreams.values())[0] as MediaStream;
@@ -97,6 +105,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
             t.enabled = true;
           });
           setP2pStream(firstStream);
+          setRenderKey((k) => k + 1);
         }
       }
     };
@@ -150,6 +159,10 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           await pc.addIceCandidate(cand).catch(() => {});
         }
         pendingIceRef.current = [];
+
+        // Force native video surface refresh on renegotiation
+        setRenderKey((k) => k + 1);
+        setIsCreatorVideoPaused(false);
       } catch (err) {
         console.warn('[RemoteStage.native] Error handling P2P offer:', err);
       }
@@ -188,9 +201,31 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       }
     };
 
+    // Handle creator camera flip event
+    const handleCameraFlipped = () => {
+      if (!isMounted) return;
+      setIsCreatorVideoPaused(false);
+      setRenderKey((k) => k + 1);
+
+      // Force refresh track enabled states
+      if (p2pStream) {
+        p2pStream.getVideoTracks().forEach((t: any) => {
+          t.enabled = true;
+        });
+      }
+
+      // Re-request stream offer from creator to guarantee fresh keyframe
+      channel.send({
+        type: 'broadcast',
+        event: 'p2p_request_stream',
+        payload: { viewerId, forceRefresh: true },
+      });
+    };
+
     channel.on('broadcast', { event: 'p2p_offer' }, handleOffer);
     channel.on('broadcast', { event: 'p2p_ice' }, handleIce);
     channel.on('broadcast', { event: 'creator_media_state' }, handleMediaState);
+    channel.on('broadcast', { event: 'camera_flipped' }, handleCameraFlipped);
 
     // Initial stream request
     channel.send({
@@ -230,6 +265,7 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     return (
       <View style={styles.container}>
         <RTCView
+          key={`remote-stage-view-${renderKey}-${p2pStream.toURL()}`}
           streamURL={p2pStream.toURL()}
           style={styles.video}
           objectFit="cover"

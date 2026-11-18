@@ -244,17 +244,43 @@ export function LocalPreview({
         newStream.addTrack(audioTrack);
       }
 
-      // 5. Replace video track on all active viewer peer connections without renegotiation
-      peersRef.current.forEach((pc) => {
+      // 5. Replace video track on all active viewer peer connections and renegotiate SDP
+      peersRef.current.forEach(async (pc, viewerId) => {
         const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
         if (sender && newVideoTrack) {
-          sender.replaceTrack(newVideoTrack).catch((err) => {
+          try {
+            await sender.replaceTrack(newVideoTrack);
+          } catch (err) {
             console.warn('[LocalPreview.native] replaceTrack error:', err);
-          });
+          }
+        }
+
+        // Renegotiate offer with each viewer to ensure remote decoders re-synchronize keyframes
+        try {
+          if (pc.signalingState === 'stable') {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            channel?.send({
+              type: 'broadcast',
+              event: 'p2p_offer',
+              payload: { targetId: viewerId, offer },
+            });
+          }
+        } catch (renegErr) {
+          console.warn('[LocalPreview.native] Camera switch renegotiation error:', renegErr);
         }
       });
 
-      // 6. Update local stream reference and trigger state update
+      // 6. Broadcast camera_flipped event so all viewers unpause and refresh video surfaces
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'camera_flipped',
+          payload: { facing: targetFacing, timestamp: Date.now() },
+        });
+      }
+
+      // 7. Update local stream reference and trigger state update
       streamRef.current = newStream;
       setLocalStream(newStream);
       currentFacingRef.current = targetFacing;
@@ -384,6 +410,24 @@ export function LocalPreview({
       const existingPc = peersRef.current.get(viewerId);
       const createdTime = peerCreationTimeRef.current.get(viewerId) || 0;
       const ageMs = Date.now() - createdTime;
+
+      // Handle explicit stream refresh request (e.g. from viewer after camera flip)
+      if (existingPc && payload?.forceRefresh) {
+        try {
+          if (existingPc.signalingState === 'stable') {
+            const offer = await existingPc.createOffer();
+            await existingPc.setLocalDescription(offer);
+            channel.send({
+              type: 'broadcast',
+              event: 'p2p_offer',
+              payload: { targetId: viewerId, offer },
+            });
+          }
+        } catch (e) {
+          console.warn('[LocalPreview.native] forceRefresh offer error:', e);
+        }
+        return;
+      }
 
       // Avoid tearing down existing connection if already active or negotiating
       if (existingPc) {

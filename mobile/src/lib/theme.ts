@@ -45,3 +45,4 @@ export const THEME = {
 } as const;
 
 export default THEME;
+

@@ -148,13 +148,32 @@ export function LocalPreview({
           newVideoTrack.enabled = !isVideoMuted;
           streamRef.current.addTrack(newVideoTrack);
 
-          // Update active WebRTC peer connections
-          peersRef.current.forEach((pc) => {
+          // Update active WebRTC peer connections and renegotiate offer
+          peersRef.current.forEach(async (pc, viewerId) => {
             const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
             if (sender) {
-              sender.replaceTrack(newVideoTrack).catch(() => {});
+              await sender.replaceTrack(newVideoTrack).catch(() => {});
             }
+            try {
+              if (pc.signalingState === 'stable') {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                channel?.send({
+                  type: 'broadcast',
+                  event: 'p2p_offer',
+                  payload: { targetId: viewerId, offer },
+                });
+              }
+            } catch (e) {}
           });
+
+          if (channel) {
+            channel.send({
+              type: 'broadcast',
+              event: 'camera_flipped',
+              payload: { facing: facingMode, timestamp: Date.now() },
+            });
+          }
 
           if (videoRef.current) {
             videoRef.current.srcObject = streamRef.current;
@@ -285,6 +304,22 @@ export function LocalPreview({
       const existingPc = peersRef.current.get(viewerId);
       const createdTime = peerCreationTimeRef.current.get(viewerId) || 0;
       const ageMs = Date.now() - createdTime;
+
+      // Handle viewer forceRefresh (e.g. following camera flip)
+      if (existingPc && payload?.forceRefresh) {
+        try {
+          if (existingPc.signalingState === 'stable') {
+            const offer = await existingPc.createOffer();
+            await existingPc.setLocalDescription(offer);
+            channel.send({
+              type: 'broadcast',
+              event: 'p2p_offer',
+              payload: { targetId: viewerId, offer },
+            });
+          }
+        } catch (e) {}
+        return;
+      }
 
       // Avoid tearing down existing connection if already active or negotiating
       if (existingPc) {
