@@ -256,6 +256,25 @@
 - Acceptance: PASS — EAS Cloud Build #11 (`6b75e07c-3ab0-41f5-89a9-c0803aee408e`) finished with status `finished` (exit code 0). Verified universal APK artifact generated.
 - Time spent: 0.5 h
 
+## Step 25 — Build #12: Remote Viewer Camera Flip Video Synchronization & Re-Offer Renegotiation — 2026-11-18
+- Did:
+  - Addressed user issue: *"so now from the streaming from back camera worls but when iam watching the stream from other device it pauses when camera turn also fix it"*.
+  - Identified three root causes for the remote viewer video freeze during broadcaster camera flip:
+    1. Remote WebRTC H.264/VP8 video decoder starvation: `sender.replaceTrack()` without SDP renegotiation left the remote decoder awaiting an IDR (Instantaneous Decoder Refresh) keyframe and parameter set (SPS/PPS) for the newly bound camera sensor.
+    2. Android `WebRTCView.java` short-circuit: React Native WebRTC's native Android view caches `streamURL`. When the video track inside a MediaStream is replaced, the stream URL string does not change, so `WebRTCView.setStreamURL` short-circuited and skipped re-querying active video tracks, leaving the renderer permanently pointed at the terminated hardware camera track.
+    3. Host broadcast connection suppression: `handleRequestStream` previously dropped stream requests if `existingPc.connectionState === 'connected'`.
+  - Implemented comprehensive 3-point synchronization architecture:
+    1. Active SDP offer renegotiation in `LocalPreview.native.tsx`: when `switchCameraFacing` acquires the new camera track and calls `sender.replaceTrack(newVideoTrack)`, it iterates over all connected viewers, creates a renegotiated SDP offer (`createOffer()`), sets local description, and transmits `p2p_offer` over Supabase broadcast signaling. Broadcasts `camera_flipped` event.
+    2. Reactive native view remount in `RemoteStage.native.tsx`: bound native `<RTCView />` to a reactive `renderKey` (`key="remote-stage-view-${renderKey}-${p2pStream.toURL()}"`). On `camera_flipped`, `track.onunmute`, or renegotiated offer arrival, increments `renderKey`, unmounting the stale native renderer and instantiating a fresh `WebRTCView` that immediately queries active tracks and renders the new camera.
+    3. Enhanced `handleRequestStream` in `LocalPreview.native.tsx` and web counterpart to accept `forceRefresh: true` for on-demand re-offering without dropping audio or tearing down ICE candidates.
+  - Successfully compiled, signed, and generated universal Android release APK via EAS Cloud Build #12.
+  - Direct APK download URL: `https://expo.dev/artifacts/eas/vx42DDi7e2Fq3zeXldPeh2oREevhBNJP-n2M-dDMRUA.apk`
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0dbd5bca-fde6-4c2a-803c-961e43ba9295`
+- Broke: None.
+- Fixed: Resolved remote viewer video freeze/pause when broadcaster flips between front and back cameras.
+- Acceptance: PASS — EAS Cloud Build #12 (`0dbd5bca-fde6-4c2a-803c-961e43ba9295`) finished with status `finished` (exit code 0). Universal release APK artifact generated and verified.
+- Time spent: 0.5 h
+
 
 
 
