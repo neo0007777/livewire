@@ -70,6 +70,13 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       if (!isMounted) return;
       let stream = event.streams && event.streams[0];
       if (stream) {
+        stream.getTracks().forEach((track) => {
+          track.onunmute = () => {
+            if (videoRef.current) {
+              videoRef.current.play().catch(() => {});
+            }
+          };
+        });
         setRemoteStream(stream);
         isConnectedRef.current = true;
         setIsConnected(true);
@@ -80,6 +87,11 @@ export function RemoteStage({ channel }: RemoteStageProps) {
           videoRef.current.play().catch(() => {});
         }
       } else if (event.track) {
+        event.track.onunmute = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+          }
+        };
         setRemoteStream((prev) => {
           let nextStream: MediaStream;
           if (prev) {
@@ -110,6 +122,13 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       if (pc.connectionState === 'connected') {
         isConnectedRef.current = true;
         setIsConnected(true);
+      } else if (
+        pc.connectionState === 'failed' ||
+        pc.connectionState === 'disconnected' ||
+        pc.connectionState === 'closed'
+      ) {
+        isConnectedRef.current = false;
+        setIsConnected(false);
       }
     };
 
@@ -191,9 +210,10 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     channel.on('broadcast', { event: 'creator_media_state' }, handleMediaState);
     channel.on('broadcast', { event: 'camera_flipped' }, handleCameraFlipped);
 
-    // Ping creator to request stream
+    // Ping creator to request stream if not actively receiving media
     const requestStream = () => {
-      if (!isConnectedRef.current && channel) {
+      if (!isMounted || !channel) return;
+      if (!isConnectedRef.current || (pc.connectionState !== 'connected' && pc.iceConnectionState !== 'connected')) {
         channel.send({
           type: 'broadcast',
           event: 'p2p_request_stream',
@@ -225,6 +245,11 @@ export function RemoteStage({ channel }: RemoteStageProps) {
         muted={isMuted}
         onLoadedMetadata={() => {
           if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+          }
+        }}
+        onPause={() => {
+          if (isConnected && !isCreatorVideoPaused && videoRef.current) {
             videoRef.current.play().catch(() => {});
           }
         }}
