@@ -10,6 +10,7 @@ import {
 } from '@livekit/react-native-webrtc';
 import { VideoCameraOffIcon, FlipCameraIcon, ScreenShareIcon } from './Icons';
 import { requestBroadcastPermissions } from '../lib/permissions';
+import { THEME } from '../lib/theme';
 
 interface LocalPreviewProps {
   channel?: any;
@@ -200,6 +201,8 @@ export function LocalPreview({
       if (oldVideoTrack) {
         oldVideoTrack.stop();
         streamRef.current?.removeTrack(oldVideoTrack);
+        // Small delay to ensure Android camera HAL releases the sensor lock
+        await new Promise((r) => setTimeout(r, 60));
       }
 
       // 3. Acquire new camera stream with target facing/deviceId
@@ -563,7 +566,7 @@ export function LocalPreview({
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -585,7 +588,7 @@ const styles = StyleSheet.create({
   },
   mutedContainer: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
@@ -614,7 +617,7 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,

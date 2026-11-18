@@ -24,6 +24,7 @@ import {
 import { useSessionStore } from '../../../stores/session';
 import { supabase } from '../../../lib/supabase';
 import { requestBroadcastPermissions } from '../../../lib/permissions';
+import { THEME } from '../../../lib/theme';
 
 export default function GoLiveScreen() {
   const router = useRouter();
@@ -249,7 +250,7 @@ export default function GoLiveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
   },
   contentContainer: {
     padding: 20,
@@ -264,16 +265,16 @@ const styles = StyleSheet.create({
   },
   studioBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(0, 229, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
+    borderColor: 'rgba(0, 229, 255, 0.35)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
     marginBottom: 10,
   },
   studioBadgeText: {
-    color: '#818CF8',
+    color: THEME.primary,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
@@ -281,22 +282,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: THEME.text,
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: THEME.textMuted,
     lineHeight: 20,
   },
   accountCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.25)',
+    borderColor: THEME.cardBorder,
     borderRadius: 14,
     padding: 12,
     marginBottom: 18,
@@ -436,9 +437,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   textInput: {
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
+    borderColor: 'rgba(56, 189, 248, 0.16)',
     borderRadius: 12,
     padding: 14,
     color: '#F8FAFC',
@@ -453,31 +454,31 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   categoryPill: {
-    backgroundColor: '#161B2E',
+    backgroundColor: '#0F1628',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(56, 189, 248, 0.12)',
   },
   categoryPillSelected: {
-    backgroundColor: '#4338CA',
-    borderColor: '#818CF8',
+    backgroundColor: 'rgba(0, 229, 255, 0.15)',
+    borderColor: THEME.primary,
   },
   categoryText: {
-    color: '#94A3B8',
+    color: THEME.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   categoryTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: THEME.primary,
+    fontWeight: '800',
   },
   perkBox: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    backgroundColor: 'rgba(0, 229, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.25)',
+    borderColor: 'rgba(0, 229, 255, 0.25)',
     borderRadius: 14,
     padding: 14,
     gap: 12,
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(0, 229, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -496,23 +497,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   perkTitle: {
-    color: '#818CF8',
+    color: THEME.primary,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
   },
   perkDescription: {
-    color: '#94A3B8',
+    color: THEME.textMuted,
     fontSize: 12,
     lineHeight: 17,
   },
   launchButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: THEME.live,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#EF4444',
+    shadowColor: THEME.live,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.5,
     shadowRadius: 12,

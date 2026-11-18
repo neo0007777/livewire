@@ -14,6 +14,7 @@ import { supabase } from '../../../lib/supabase';
 import { useSessionStore } from '../../../stores/session';
 import { CheckIcon, UserIcon } from '../../../components/Icons';
 import { toggleFollowUser } from '../../../lib/follows';
+import { THEME } from '../../../lib/theme';
 
 interface UserProfileItem {
   id: string;
@@ -341,7 +342,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
   },
   contentContainer: {
     padding: 24,
@@ -354,17 +355,17 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: THEME.text,
     letterSpacing: 0.5,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: THEME.cardBorder,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
     height: 86,
     borderRadius: 43,
     padding: 3,
-    backgroundColor: '#6366F1',
+    backgroundColor: THEME.primaryDeep,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 14,
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 40,
-    backgroundColor: '#1E1B4B',
+    backgroundColor: '#0A1224',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -404,19 +405,19 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: THEME.text,
   },
   verifiedBadge: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#3B82F6',
+    backgroundColor: THEME.primaryDeep,
     justifyContent: 'center',
     alignItems: 'center',
   },
   email: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: THEME.textMuted,
     marginBottom: 20,
   },
   statsRow: {
@@ -424,11 +425,11 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(56, 189, 248, 0.1)',
   },
   statItem: {
     alignItems: 'center',
@@ -437,24 +438,24 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   statItemActive: {
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    backgroundColor: 'rgba(0, 229, 255, 0.12)',
   },
   statNumber: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: THEME.text,
   },
   statNumberActive: {
-    color: '#818CF8',
+    color: THEME.primary,
   },
   statLabel: {
     fontSize: 11,
-    color: '#64748B',
+    color: THEME.textSubtle,
     marginTop: 2,
     fontWeight: '600',
   },
   statLabelActive: {
-    color: '#A5B4FC',
+    color: THEME.accent,
   },
   statDivider: {
     width: 1,
@@ -462,11 +463,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   sectionCard: {
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: THEME.cardBorder,
     marginBottom: 20,
     gap: 14,
   },
@@ -476,12 +477,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#818CF8',
+    color: THEME.primary,
     letterSpacing: 1,
   },
   tabSwitcher: {
     flexDirection: 'row',
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     padding: 4,
     borderRadius: 10,
     gap: 4,

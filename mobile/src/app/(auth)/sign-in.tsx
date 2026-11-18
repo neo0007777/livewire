@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { BroadcastIcon } from '../../components/Icons';
+import { BroadcastIcon, ApexBrandLogo } from '../../components/Icons';
+import { THEME } from '../../lib/theme';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -47,9 +48,7 @@ export default function SignInScreen() {
       <View style={styles.card}>
         {/* Brand Header */}
         <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <BroadcastIcon size={20} color="#EF4444" />
-          </View>
+          <ApexBrandLogo size={42} />
           <View>
             <Text style={styles.brandTitle}>LIVEWIRE</Text>
             <Text style={styles.brandSubtitle}>NEXT-GEN STREAMING PLATFORM</Text>
@@ -133,7 +132,7 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
   },
   scrollContent: {
     flexGrow: 1,
@@ -142,47 +141,35 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderRadius: 24,
     padding: 28,
     width: '100%',
     maxWidth: 440,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: THEME.cardBorder,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 8,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     marginBottom: 20,
-  },
-  logoBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#4F46E5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoIcon: {
-    fontSize: 22,
-    color: '#FFF',
   },
   brandTitle: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: THEME.text,
     letterSpacing: 1.5,
   },
   brandSubtitle: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#818CF8',
+    color: THEME.primary,
     letterSpacing: 1,
   },
   title: {
@@ -207,9 +194,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
+    borderColor: 'rgba(56, 189, 248, 0.16)',
     borderRadius: 12,
     padding: 13,
     color: '#FFFFFF',
@@ -217,22 +204,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: THEME.primaryDeep,
+    borderWidth: 1,
+    borderColor: THEME.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 6,
-    shadowColor: '#6366F1',
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
-    shadowRadius: 8,
+    shadowRadius: 10,
     elevation: 4,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   quickFillContainer: {
     marginTop: 20,

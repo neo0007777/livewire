@@ -8,6 +8,7 @@ import {
   MediaStream,
 } from '@livekit/react-native-webrtc';
 import { VideoCameraOffIcon, MicMutedIcon, ScreenShareIcon } from './Icons';
+import { THEME } from '../lib/theme';
 
 interface RemoteStageProps {
   channel?: any;
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

@@ -20,7 +20,8 @@ import {
   getStreamCategory,
   cleanStreamTitle,
 } from '../../../lib/categories';
-import { MonitorIcon, CheckIcon } from '../../../components/Icons';
+import { MonitorIcon, CheckIcon, ApexBrandLogo } from '../../../components/Icons';
+import { THEME } from '../../../lib/theme';
 
 interface StreamItem {
   id: string;
@@ -115,9 +116,7 @@ export default function LiveStreamsScreen() {
       {/* Top Branding Bar */}
       <View style={styles.topHeader}>
         <View style={styles.brandRow}>
-          <View style={styles.brandLogo}>
-            <View style={styles.brandLogoDot} />
-          </View>
+          <ApexBrandLogo size={36} />
           <View>
             <Text style={styles.brandTitle}>LIVEWIRE</Text>
             <Text style={styles.brandSubtitle}>BROADCAST NETWORK</Text>
@@ -170,7 +169,7 @@ export default function LiveStreamsScreen() {
         data={filteredStreams}
         keyExtractor={(item, index) => item.id || `stream-${index}`}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#818CF8" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME.primary} />
         }
         contentContainerStyle={
           filteredStreams.length === 0
@@ -289,7 +288,7 @@ export default function LiveStreamsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
   },
   topHeader: {
@@ -305,30 +304,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  brandLogo: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#4F46E5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  brandLogoDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FFFFFF',
-  },
   brandTitle: {
     fontSize: 17,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: THEME.text,
     letterSpacing: 1.2,
   },
   brandSubtitle: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#818CF8',
+    color: THEME.primary,
     letterSpacing: 1,
   },
   headerRight: {
@@ -339,9 +324,9 @@ const styles = StyleSheet.create({
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: THEME.liveBadgeBg,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+    borderColor: 'rgba(255, 42, 84, 0.35)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 16,
@@ -351,24 +336,24 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#EF4444',
+    backgroundColor: THEME.live,
   },
   activeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FCA5A5',
+    color: '#FFA1B5',
     letterSpacing: 0.5,
   },
   userBadge: {
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(0, 229, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
+    borderColor: 'rgba(0, 229, 255, 0.25)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   userBadgeText: {
-    color: '#A5B4FC',
+    color: THEME.primary,
     fontSize: 10,
     fontWeight: '800',
   },
@@ -380,25 +365,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    backgroundColor: '#111628',
+    backgroundColor: '#0F1628',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: 'rgba(56, 189, 248, 0.12)',
   },
   categoryChipSelected: {
-    backgroundColor: '#4338CA',
-    borderColor: '#818CF8',
+    backgroundColor: 'rgba(0, 229, 255, 0.14)',
+    borderColor: THEME.primary,
   },
   categoryText: {
-    color: '#94A3B8',
+    color: THEME.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   categoryTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: THEME.primary,
+    fontWeight: '800',
   },
   list: {
     padding: 16,
@@ -414,14 +399,14 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   card: {
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: THEME.cardBorder,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 5,
   },
@@ -431,7 +416,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 14,
     overflow: 'hidden',
-    backgroundColor: '#111625',
+    backgroundColor: '#11172B',
   },
   previewTopRow: {
     flexDirection: 'row',
@@ -442,7 +427,7 @@ const styles = StyleSheet.create({
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EF4444',
+    backgroundColor: THEME.live,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -467,21 +452,21 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   tagPill: {
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: 'rgba(8, 11, 20, 0.85)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(56, 189, 248, 0.2)',
   },
   tagText: {
-    color: '#818CF8',
+    color: THEME.accent,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   durationPill: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(8, 11, 20, 0.8)',
     color: '#CBD5E1',
     fontSize: 11,
     fontWeight: '600',
@@ -500,7 +485,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     padding: 2,
-    backgroundColor: '#6366F1',
+    backgroundColor: THEME.primaryDeep,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -508,7 +493,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 19,
-    backgroundColor: '#1E1B4B',
+    backgroundColor: '#0A1224',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -521,7 +506,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   streamTitle: {
-    color: '#F8FAFC',
+    color: THEME.text,
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
@@ -531,12 +516,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   creatorName: {
-    color: '#94A3B8',
+    color: THEME.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
   verifiedCheck: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: THEME.primaryDeep,
     width: 13,
     height: 13,
     borderRadius: 6.5,
@@ -554,7 +539,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   categorySub: {
-    color: '#818CF8',
+    color: THEME.accent,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -567,9 +552,9 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    backgroundColor: 'rgba(0, 229, 255, 0.12)',
     borderWidth: 1.5,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderColor: 'rgba(0, 229, 255, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 18,
@@ -577,22 +562,24 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: THEME.text,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: THEME.textMuted,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
   },
   emptyActionButton: {
-    backgroundColor: '#4F46E5',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    backgroundColor: THEME.primaryDeep,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: THEME.primary,
   },
   emptyActionText: {
     color: '#FFF',

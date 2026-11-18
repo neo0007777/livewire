@@ -4,6 +4,7 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/session';
+import { THEME } from '../lib/theme';
 
 // Register LiveKit WebRTC globals on native platforms only
 if (Platform.OS !== 'web') {
@@ -75,8 +76,8 @@ function AuthGate() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A0A' }}>
-        <ActivityIndicator size="large" color="#6366F1" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: THEME.bg }}>
+        <ActivityIndicator size="large" color={THEME.primary} />
       </View>
     );
   }

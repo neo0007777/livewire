@@ -23,6 +23,7 @@ import { supabase } from '../../../lib/supabase';
 import { getStreamCategory, cleanStreamTitle } from '../../../lib/categories';
 import { CloseIcon, MonitorIcon, CheckIcon } from '../../../components/Icons';
 import { toggleFollowUser } from '../../../lib/follows';
+import { THEME } from '../../../lib/theme';
 
 export default function WatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -309,12 +310,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
     gap: 8,
-    backgroundColor: 'rgba(10, 14, 26, 0.75)',
+    backgroundColor: 'rgba(8, 11, 20, 0.85)',
     borderRadius: 24,
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(56, 189, 248, 0.15)',
     backdropFilter: 'blur(10px)',
   } as any,
   backButton: {
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#4F46E5',
+    backgroundColor: THEME.primaryDeep,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -363,17 +364,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoryPillHeader: {
-    color: '#818CF8',
+    color: THEME.accent,
     fontSize: 10,
     fontWeight: '700',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(0, 229, 255, 0.12)',
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 6,
     marginLeft: 4,
   },
   verifiedDot: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: THEME.primaryDeep,
     width: 12,
     height: 12,
     borderRadius: 6,
@@ -391,11 +392,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   followButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: THEME.primaryDeep,
+    borderWidth: 1,
+    borderColor: THEME.primary,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
-    shadowColor: '#6366F1',
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
     shadowRadius: 4,

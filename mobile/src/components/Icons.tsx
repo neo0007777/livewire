@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Image } from 'react-native';
 
 interface IconProps {
   size?: number;
@@ -485,3 +485,19 @@ export function ClockIcon({ size = 12, color = '#F59E0B' }: IconProps) {
     </View>
   );
 }
+
+// LiveWire Apex Brand Logo Component (using high-res cyber brand mark)
+export function ApexBrandLogo({ size = 32 }: { size?: number }) {
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+      <Image
+        source={require('../../assets/images/brand-logo.png')}
+        style={{ width: size, height: size * 0.92 }}
+        resizeMode="contain"
+      />
+    </View>
+  );
+}
+
+export const BrandLogo = ApexBrandLogo;
+

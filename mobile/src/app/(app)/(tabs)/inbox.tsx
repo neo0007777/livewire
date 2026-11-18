@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInbox, AppNotification } from '../../../hooks/useInbox';
 import { BroadcastIcon, UserIcon, EyeIcon, MonitorIcon, BellIcon } from '../../../components/Icons';
+import { THEME } from '../../../lib/theme';
 
 export default function InboxScreen() {
   const router = useRouter();
@@ -141,7 +142,7 @@ export default function InboxScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     paddingTop: Platform.OS === 'ios' ? 60 : 30,
   },
   headerRow: {
@@ -154,16 +155,16 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#F8FAFC',
+    color: THEME.text,
     letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: THEME.textMuted,
     marginTop: 2,
   },
   badge: {
-    backgroundColor: '#EF4444',
+    backgroundColor: THEME.live,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 14,
@@ -187,18 +188,18 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   card: {
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderRadius: 16,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: THEME.cardBorder,
   },
   unreadCard: {
-    backgroundColor: '#13192B',
-    borderColor: 'rgba(99, 102, 241, 0.3)',
+    backgroundColor: THEME.cardElevated,
+    borderColor: 'rgba(0, 229, 255, 0.35)',
   },
   iconCircle: {
     width: 44,

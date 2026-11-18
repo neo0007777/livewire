@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInbox } from '../../../hooks/useInbox';
 import { MonitorIcon, BroadcastIcon, BellIcon, UserIcon } from '../../../components/Icons';
+import { THEME } from '../../../lib/theme';
 
 export default function TabLayout() {
   const { unreadCount } = useInbox();
@@ -18,8 +19,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarLabelPosition: 'below-icon',
         tabBarStyle: {
-          backgroundColor: '#0A0D18',
-          borderTopColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: THEME.tabBar,
+          borderTopColor: THEME.tabBarBorder,
           borderTopWidth: 1,
           height: barHeight,
           paddingBottom: bottomPadding,
@@ -27,20 +28,21 @@ export default function TabLayout() {
           elevation: 20,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.35,
-          shadowRadius: 12,
+          shadowOpacity: 0.45,
+          shadowRadius: 14,
         },
         tabBarItemStyle: {
           justifyContent: 'center',
           alignItems: 'center',
           paddingVertical: 4,
         },
-        tabBarActiveTintColor: '#818CF8',
-        tabBarInactiveTintColor: '#64748B',
+        tabBarActiveTintColor: THEME.primary,
+        tabBarInactiveTintColor: THEME.textSubtle,
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
+          fontWeight: '700',
           marginTop: 2,
+          letterSpacing: 0.2,
         },
       }}
     >
@@ -51,7 +53,7 @@ export default function TabLayout() {
           tabBarLabel: 'Live',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              <MonitorIcon size={20} color={focused ? '#818CF8' : '#64748B'} />
+              <MonitorIcon size={20} color={focused ? THEME.primary : THEME.textSubtle} />
               {focused && <View style={styles.activeDot} />}
             </View>
           ),
@@ -62,14 +64,14 @@ export default function TabLayout() {
         options={{
           title: 'Go Live',
           tabBarLabel: 'Go Live',
-          tabBarActiveTintColor: '#EF4444',
-          tabBarInactiveTintColor: '#EF4444',
+          tabBarActiveTintColor: THEME.live,
+          tabBarInactiveTintColor: THEME.live,
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
               <View style={[styles.goLiveBtn, focused && styles.goLiveBtnFocused]}>
                 <BroadcastIcon
                   size={16}
-                  color={focused ? '#FFFFFF' : '#EF4444'}
+                  color={focused ? '#FFFFFF' : THEME.live}
                 />
               </View>
               {focused && <View style={styles.activeDotRed} />}
@@ -84,7 +86,7 @@ export default function TabLayout() {
           tabBarLabel: 'Activity',
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: {
-            backgroundColor: '#EF4444',
+            backgroundColor: THEME.live,
             color: '#FFFFFF',
             fontSize: 10,
             fontWeight: '800',
@@ -95,7 +97,7 @@ export default function TabLayout() {
           },
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              <BellIcon size={20} color={focused ? '#818CF8' : '#64748B'} />
+              <BellIcon size={20} color={focused ? THEME.primary : THEME.textSubtle} />
               {focused && <View style={styles.activeDot} />}
             </View>
           ),
@@ -108,7 +110,7 @@ export default function TabLayout() {
           tabBarLabel: 'Profile',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              <UserIcon size={20} color={focused ? '#818CF8' : '#64748B'} />
+              <UserIcon size={20} color={focused ? THEME.primary : THEME.textSubtle} />
               {focused && <View style={styles.activeDot} />}
             </View>
           ),
@@ -128,30 +130,34 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#818CF8',
+    backgroundColor: THEME.primary,
     position: 'absolute',
     bottom: -3,
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
   },
   goLiveBtn: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: THEME.liveBadgeBg,
     borderWidth: 1.5,
-    borderColor: '#EF4444',
+    borderColor: THEME.live,
     alignItems: 'center',
     justifyContent: 'center',
   },
   goLiveBtnFocused: {
-    backgroundColor: '#EF4444',
-    borderColor: '#F87171',
+    backgroundColor: THEME.live,
+    borderColor: '#FF6B8B',
     transform: [{ scale: 1.05 }],
   },
   activeDotRed: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#EF4444',
+    backgroundColor: THEME.live,
     position: 'absolute',
     bottom: -4,
   },

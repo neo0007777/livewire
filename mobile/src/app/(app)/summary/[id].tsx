@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { cleanStreamTitle, getStreamCategory } from '../../../lib/categories';
 import { EyeIcon, UserIcon, BroadcastIcon, MonitorIcon } from '../../../components/Icons';
+import { THEME } from '../../../lib/theme';
 
 function formatMomentRange(m: any) {
   const startSec = typeof m?.start_seconds === 'number' ? m.start_seconds : 0;
@@ -258,7 +259,7 @@ export default function StreamSummaryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
   },
   contentContainer: {
     padding: 24,
@@ -275,15 +276,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   badge: {
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    backgroundColor: 'rgba(0, 229, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
+    borderColor: 'rgba(0, 229, 255, 0.35)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
   },
   badgeText: {
-    color: '#818CF8',
+    color: THEME.primary,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
@@ -332,9 +333,9 @@ const styles = StyleSheet.create({
   statBox: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#0E1322',
+    backgroundColor: THEME.card,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: THEME.cardBorder,
     borderRadius: 16,
     padding: 16,
   },
@@ -408,7 +409,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   momentsContainer: {
-    backgroundColor: '#070913',
+    backgroundColor: THEME.bg,
     borderRadius: 12,
     padding: 12,
     gap: 8,
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   timestampText: {
-    color: '#818CF8',
+    color: THEME.primary,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -451,25 +452,27 @@ const styles = StyleSheet.create({
   },
   generateNowBtn: {
     marginTop: 10,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    backgroundColor: 'rgba(0, 229, 255, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.5)',
+    borderColor: 'rgba(0, 229, 255, 0.4)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
   },
   generateNowBtnText: {
-    color: '#C7D2FE',
+    color: THEME.primary,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
   doneButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: THEME.primaryDeep,
+    borderWidth: 1,
+    borderColor: THEME.primary,
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
