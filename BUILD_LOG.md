@@ -275,6 +275,26 @@
 - Acceptance: PASS — EAS Cloud Build #12 (`0dbd5bca-fde6-4c2a-803c-961e43ba9295`) finished with status `finished` (exit code 0). Universal release APK artifact generated and verified.
 - Time spent: 0.5 h
 
+## Step 26 — Build #13: Elimination of Viewer Black Screen / Video Pause on Camera Flip for Mobile & Web — 2026-11-18
+- Did:
+  - Addressed user issue: *"ui is done but still when iam flipping the camera from the streaming phone there comes a black screen on the viewer screen fix this thing"* and *"i tested in the web i started stream from the phone and joined it from my mac i flipper my camera the scrren paused when i done it so fix it for both phone and web too"*.
+  - Diagnosed root causes:
+    1. In `LocalPreview.native.tsx`, the WebRTC signaling `useEffect` declared `[channel, localStream]` in its dependencies. When camera flip called `setLocalStream(newStream)`, React unmounted the effect and executed its cleanup routine: `peersRef.current.forEach(pc => pc.close()); peersRef.current.clear()`, which violently destroyed all active viewer connections mid-stream.
+    2. In `RemoteStage.native.tsx`, `renderKey` unmounting triggered `cleanSurfaceViewRenderer()` in Android's `WebRTCView.java`, which painted the surface solid black (`Color.BLACK`). Because the broadcaster's peer connection had been closed in step 1, no incoming frames arrived, locking the screen on black.
+    3. In `RemoteStage.web.tsx` on Mac browsers, incoming tracks lacked an `onunmute` event handler to resume HTML5 `<video>` playback after track replacement, causing the video element to remain paused.
+  - Implemented comprehensive fix across mobile and web:
+    1. Decoupled signaling effect lifecycle in `LocalPreview.native.tsx`: changed dependency to `[channel]` only, querying `streamRef.current` dynamically. Preserves peer connections across camera flips without teardown.
+    2. Hot-swaps video tracks seamlessly on all persistent peer connections using `sender.replaceTrack(newVideoTrack)` without renegotiation glare.
+    3. Stabilized `<RTCView />` on native Android viewers without unmounting or buffer clearing.
+    4. Enhanced `RemoteStage.web.tsx` with `track.onunmute` listeners and `onPause` auto-play recovery to ensure continuous playback on Mac browsers.
+  - Successfully compiled, signed, and generated universal Android release APK via EAS Cloud Build #13.
+  - Direct APK download URL: `https://expo.dev/artifacts/eas/B8iU3O8h_E3iuRLIDDChccMapEi2FwfB9KAPx6xE7cc.apk`
+  - Build dashboard & logs: `https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104`
+- Broke: None.
+- Fixed: Resolved viewer black screen and video pause when flipping camera on both mobile and web viewers.
+- Acceptance: PASS — EAS Cloud Build #13 (`0461060b-1aff-4673-b9f9-d1114bca2104`) finished with status `finished` (exit code 0). Universal release APK artifact generated and verified.
+- Time spent: 0.5 h
+
 
 
 
