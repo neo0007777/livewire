@@ -148,23 +148,12 @@ export function LocalPreview({
           newVideoTrack.enabled = !isVideoMuted;
           streamRef.current.addTrack(newVideoTrack);
 
-          // Update active WebRTC peer connections and renegotiate offer
-          peersRef.current.forEach(async (pc, viewerId) => {
+          // Update active WebRTC peer connections seamlessly via replaceTrack
+          peersRef.current.forEach(async (pc) => {
             const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
             if (sender) {
               await sender.replaceTrack(newVideoTrack).catch(() => {});
             }
-            try {
-              if (pc.signalingState === 'stable') {
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                channel?.send({
-                  type: 'broadcast',
-                  event: 'p2p_offer',
-                  payload: { targetId: viewerId, offer },
-                });
-              }
-            } catch (e) {}
           });
 
           if (channel) {

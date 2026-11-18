@@ -592,4 +592,19 @@
   5. **Web Ingress Continuity:** Updated `RemoteStage.web.tsx` to handle `camera_flipped` by re-binding `srcObject` and issuing `forceRefresh` stream requests.
 - Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,009 bundled modules.
 
+### Turn 41: Elimination of Viewer Black Screen on Broadcaster Camera Flip
+**User:**
+> "ui is done but still when iam flipping the camera from the streaming phone there comes a black screen on the viewer screen fix this thing"
+
+**Action Taken:**
+- Investigated and isolated the exact root cause of the remote viewer black screen upon broadcaster camera flip:
+  1. **Broadcaster Peer Connection Teardown via State Dependency:** In `LocalPreview.native.tsx`, the WebRTC P2P signaling `useEffect` declared `[channel, localStream]` as its dependency array. When `switchCameraFacing` acquired the target camera stream and executed `setLocalStream(newStream)`, React detected the reference transition and executed the effect's cleanup routine (`peersRef.current.forEach(pc => pc.close()); peersRef.current.clear()`). This immediately closed all established peer connections to active viewers, permanently terminating the RTP video pipeline mid-stream.
+  2. **Native Surface View Clearing on Remount:** In `RemoteStage.native.tsx`, the dynamic `renderKey` remounted the native `<RTCView />` component upon receiving `camera_flipped` or renegotiation events. In Android's `WebRTCView.java`, detaching from the window triggers `cleanSurfaceViewRenderer()`, which clears the display buffer and sets the SurfaceView background to opaque black (`surfaceViewRenderer.setBackgroundColor(Color.BLACK)`). Because the broadcaster's peer connection had been destroyed by the state dependency cleanup, no new video frames ever arrived, leaving the native SurfaceView permanently locked on black.
+- Architectural Solutions Applied:
+  1. **Decoupled Broadcaster Signaling Lifecycle:** In `LocalPreview.native.tsx`, updated the WebRTC signaling `useEffect` dependency array from `[channel, localStream]` to `[channel]` alone. Refactored `handleRequestStream` to query active tracks dynamically from `streamRef.current`. Consequently, updating `localStream` during camera flips no longer triggers effect cleanup, preserving all active viewer peer connections without teardown.
+  2. **Seamless Track Hot-Swapping via `sender.replaceTrack`:** Updated `switchCameraFacing` to iterate over persistent peer connections in `peersRef.current` and call `await sender.replaceTrack(newVideoTrack)`. This swaps the active camera sensor directly inside the existing RTP stream without triggering SDP renegotiation glare or teardown.
+  3. **Stabilized Native Video Renderer on Viewer:** In `RemoteStage.native.tsx`, removed `renderKey` remounting and bound `<RTCView />` permanently to the incoming `MediaStream`. Android's native `SurfaceViewRenderer` remains continuously attached to the remote `VideoTrack`, rendering incoming frames from the newly flipped camera without buffer clearing or black screen flashing.
+  4. **Automatic Reconnection Guard:** In `RemoteStage.native.tsx`, updated the retry interval to detect non-connected peer states (`pc.connectionState !== 'connected' && pc.iceConnectionState !== 'connected'`) and automatically re-request the stream if connection is ever lost.
+- Verified TypeScript compilation (`npx tsc --noEmit`) with 0 errors and verified Android production bundle export (`1,758 modules bundled in 15.1s with 0 errors`).
+
 

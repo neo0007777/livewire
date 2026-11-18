@@ -177,19 +177,13 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       }
     };
 
-    // Handle creator camera flip
+    // Handle creator camera flip: ensure video playback continues smoothly
     const handleCameraFlipped = () => {
       if (!isMounted) return;
       setIsCreatorVideoPaused(false);
       if (videoRef.current && remoteStream) {
-        videoRef.current.srcObject = remoteStream;
         videoRef.current.play().catch(() => {});
       }
-      channel.send({
-        type: 'broadcast',
-        event: 'p2p_request_stream',
-        payload: { viewerId, forceRefresh: true },
-      });
     };
 
     channel.on('broadcast', { event: 'p2p_offer' }, handleOffer);

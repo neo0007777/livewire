@@ -33,7 +33,6 @@ const ICE_SERVERS = [
 
 export function RemoteStage({ channel }: RemoteStageProps) {
   const [p2pStream, setP2pStream] = useState<MediaStream | null>(null);
-  const [renderKey, setRenderKey] = useState(0);
   const [isCreatorVideoPaused, setIsCreatorVideoPaused] = useState(false);
   const [isCreatorMicMuted, setIsCreatorMicMuted] = useState(false);
   const [isCreatorScreenSharing, setIsCreatorScreenSharing] = useState(false);
@@ -87,17 +86,10 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       if (stream) {
         stream.getTracks().forEach((t: any) => {
           t.enabled = true;
-          t.onunmute = () => {
-            if (isMounted) setRenderKey((k) => k + 1);
-          };
         });
         setP2pStream(stream);
-        setRenderKey((k) => k + 1);
       } else if (event.track) {
         event.track.enabled = true;
-        event.track.onunmute = () => {
-          if (isMounted) setRenderKey((k) => k + 1);
-        };
         const remoteStreams = (pc as any)._remoteStreams;
         if (remoteStreams && remoteStreams.size > 0) {
           const firstStream = Array.from(remoteStreams.values())[0] as MediaStream;
@@ -105,7 +97,6 @@ export function RemoteStage({ channel }: RemoteStageProps) {
             t.enabled = true;
           });
           setP2pStream(firstStream);
-          setRenderKey((k) => k + 1);
         }
       }
     };
@@ -116,7 +107,8 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       if (pc.connectionState === 'connected') {
         isP2pConnectedRef.current = true;
         setConnectionStatus('connected');
-      } else if (pc.connectionState === 'failed') {
+      } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+        isP2pConnectedRef.current = false;
         setConnectionStatus('idle');
       }
     };
@@ -160,8 +152,6 @@ export function RemoteStage({ channel }: RemoteStageProps) {
         }
         pendingIceRef.current = [];
 
-        // Force native video surface refresh on renegotiation
-        setRenderKey((k) => k + 1);
         setIsCreatorVideoPaused(false);
       } catch (err) {
         console.warn('[RemoteStage.native] Error handling P2P offer:', err);
@@ -201,25 +191,16 @@ export function RemoteStage({ channel }: RemoteStageProps) {
       }
     };
 
-    // Handle creator camera flip event
+    // Handle creator camera flip event: keep stream active and unpause
     const handleCameraFlipped = () => {
       if (!isMounted) return;
       setIsCreatorVideoPaused(false);
-      setRenderKey((k) => k + 1);
 
-      // Force refresh track enabled states
       if (p2pStream) {
         p2pStream.getVideoTracks().forEach((t: any) => {
           t.enabled = true;
         });
       }
-
-      // Re-request stream offer from creator to guarantee fresh keyframe
-      channel.send({
-        type: 'broadcast',
-        event: 'p2p_request_stream',
-        payload: { viewerId, forceRefresh: true },
-      });
     };
 
     channel.on('broadcast', { event: 'p2p_offer' }, handleOffer);
@@ -236,11 +217,8 @@ export function RemoteStage({ channel }: RemoteStageProps) {
 
     // Re-request stream periodically until connected
     const retryInterval = setInterval(() => {
-      if (isP2pConnectedRef.current) {
-        clearInterval(retryInterval);
-        return;
-      }
-      if (isMounted && channel) {
+      if (!isMounted || !channel) return;
+      if (pc.connectionState !== 'connected' && pc.iceConnectionState !== 'connected') {
         channel.send({
           type: 'broadcast',
           event: 'p2p_request_stream',
@@ -265,7 +243,6 @@ export function RemoteStage({ channel }: RemoteStageProps) {
     return (
       <View style={styles.container}>
         <RTCView
-          key={`remote-stage-view-${renderKey}-${p2pStream.toURL()}`}
           streamURL={p2pStream.toURL()}
           style={styles.video}
           objectFit="cover"

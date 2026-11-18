@@ -244,34 +244,19 @@ export function LocalPreview({
         newStream.addTrack(audioTrack);
       }
 
-      // 5. Replace video track on all active viewer peer connections and renegotiate SDP
-      peersRef.current.forEach(async (pc, viewerId) => {
+      // 5. Replace video track on all active viewer peer connections seamlessly without renegotiation
+      for (const [viewerId, pc] of peersRef.current.entries()) {
         const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
         if (sender && newVideoTrack) {
           try {
             await sender.replaceTrack(newVideoTrack);
           } catch (err) {
-            console.warn('[LocalPreview.native] replaceTrack error:', err);
+            console.warn('[LocalPreview.native] replaceTrack error for viewer:', viewerId, err);
           }
         }
+      }
 
-        // Renegotiate offer with each viewer to ensure remote decoders re-synchronize keyframes
-        try {
-          if (pc.signalingState === 'stable') {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            channel?.send({
-              type: 'broadcast',
-              event: 'p2p_offer',
-              payload: { targetId: viewerId, offer },
-            });
-          }
-        } catch (renegErr) {
-          console.warn('[LocalPreview.native] Camera switch renegotiation error:', renegErr);
-        }
-      });
-
-      // 6. Broadcast camera_flipped event so all viewers unpause and refresh video surfaces
+      // 6. Broadcast camera_flipped event so all viewers unpause and update mirroring
       if (channel) {
         channel.send({
           type: 'broadcast',
@@ -401,7 +386,7 @@ export function LocalPreview({
 
   // WebRTC P2P direct transmission to viewers (mobile or web) via Supabase Realtime channel
   useEffect(() => {
-    if (!channel || !localStream) return;
+    if (!channel) return;
 
     const handleRequestStream = async ({ payload }: any) => {
       const viewerId = payload?.viewerId;
@@ -459,13 +444,17 @@ export function LocalPreview({
         pendingIceRef.current.delete(viewerId);
       }
 
+      const activeStream = streamRef.current;
+      if (!activeStream) return;
+
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       peersRef.current.set(viewerId, pc);
       peerCreationTimeRef.current.set(viewerId, Date.now());
       pendingIceRef.current.set(viewerId, []);
 
-      localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, localStream);
+      activeStream.getTracks().forEach((track) => {
+        track.enabled = track.kind === 'video' ? !isVideoMuted : !isMicMuted;
+        pc.addTrack(track, activeStream);
       });
 
       pc.onicecandidate = (event: any) => {
@@ -541,7 +530,7 @@ export function LocalPreview({
       pendingIceRef.current.clear();
       peerCreationTimeRef.current.clear();
     };
-  }, [channel, localStream]);
+  }, [channel]);
 
   if (permissionDenied) {
     return (
