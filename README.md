@@ -14,24 +14,25 @@ LiveWire is a high-performance, real-time live event streaming platform built fo
 
 | Deliverable | Description | Direct Link |
 |---|---|---|
-| **Android Universal APK (Build #9 — Latest)** | Native remote stream sink binding restoration, host AudioSession mic initialization & secondary audio capture | [📥 Download `livewire-preview-v9.apk` (Direct Download)](https://expo.dev/artifacts/eas/j83x5g3tavK9wTmsrrwD-2N5KJZiO5MdWG6A-dpblpE.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/09688fe0-aea4-4dda-9f47-90e206bce03a) |
-| **Android Universal APK (Build #8)** | Cellular symmetric NAT traversal, 15s peer handshake protection, OpenRelay TURN & native audio engine | [📥 Download `livewire-preview-v8.apk` (Direct Download)](https://expo.dev/artifacts/eas/tm3reRohU3YqiiAo_XiXetZ061HBRvpPmD-KYYkZy0U.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/b232a0a0-5924-4827-871f-83f1be86b615) |
-| **Android Universal APK (Build #7)** | Hardened release with ICE candidate queuing, SFU bypass & multi-tier resolution fallback | [📥 Download `livewire-preview-v7.apk` (Direct Download)](https://expo.dev/artifacts/eas/VuDLJmIRgSehnQ7N-qpwX6xHogquATdmxAXYXSv2z2E.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/dc0bb657-8fb0-4dae-b3c7-dd9c6e3c8c80) |
-| **Android Universal APK (Build #6)** | Production internal distribution build with native hardware WebRTC camera engine | [📥 Download `livewire-preview-v6.apk` (Direct Download)](https://expo.dev/artifacts/eas/lKZoEzeY7aD_aD2nFjmL3GTnoVlm3oH889o9-GWRxkM.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/fbd7a28a-e231-4ce9-a9d4-39ab4db84fff) |
-| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #fbd7a28a](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/fbd7a28a-e231-4ce9-a9d4-39ab4db84fff) |
+| **Android Universal APK (Build #13 — Latest & Verified)** | Front/back camera flip, remote viewer freeze fix, screen sharing foreground service, obsidian theme & apex logo | [📥 Download `livewire-preview-v13.apk` (Direct Download)](https://expo.dev/artifacts/eas/B8iU3O8h_E3iuRLIDDChccMapEi2FwfB9KAPx6xE7cc.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104) |
+| **Android Universal APK (Build #12)** | WebRTC offer renegotiation & dynamic native view key re-binding | [📥 Download `livewire-preview-v12.apk` (Direct Download)](https://expo.dev/artifacts/eas/vx42DDi7e2Fq3zeXldPeh2oREevhBNJP-n2M-dDMRUA.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0dbd5bca-fde6-4c2a-803c-961e43ba9295) |
+| **Android Universal APK (Build #11)** | Premium obsidian cyber streaming theme, brand apex chevron logo & hardware camera enumeration | [📥 Download `livewire-preview-v11.apk` (Direct Download)](https://expo.dev/artifacts/eas/RfDd_zyy5acBAF9Ivla0ra5tFO_9Dg1hTBbpbtw5pm8.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/6b75e07c-3ab0-41f5-89a9-c0803aee408e) |
+| **Android Universal APK (Build #10)** | Android 14+ Screen Sharing Foreground Service & seamless camera track swap | [📥 Download `livewire-preview-v10.apk` (Direct Download)](https://expo.dev/artifacts/eas/RaDR_YFuOIypMaFCroLjzADrslDSc_0JeX_f4MC_0Hk.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/86e81853-6a38-4b38-85fe-098243c92954) |
+| **Android Universal APK (Build #9)** | Native remote stream sink binding restoration, host AudioSession mic initialization & secondary audio capture | [📥 Download `livewire-preview-v9.apk` (Direct Download)](https://expo.dev/artifacts/eas/j83x5g3tavK9wTmsrrwD-2N5KJZiO5MdWG6A-dpblpE.apk) \| [EAS Artifacts Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/09688fe0-aea4-4dda-9f47-90e206bce03a) |
+| **Expo EAS Build Dashboard** | Cloud build logs, signing certificate info, and mobile QR code | [🔗 EAS Build #0461060b](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104) |
 | **Video Walkthrough (3 Min)** | 3-minute video covering Creator Go Live, Viewer Join, Chat, and Analytics | `[Link to Loom Video Demo]` |
 | **Build Blueprint** | Original 1,700-line architecture specification & build requirements | [📄 `docs/BLUEPRINT.md`](./docs/BLUEPRINT.md) |
 | **Engineering Prompt History** | Full conversational prompts and technical evolution logs | [📄 `PROMPTS.md`](./PROMPTS.md) & [📄 `cht.md`](./cht.md) |
 | **Build & Test Verification Matrix** | Section 9 manual verification checklist (100% PASS) | [📄 `BUILD_LOG.md`](./BUILD_LOG.md) |
 | **Backend Documentation** | Supabase database migrations, RLS policies, and Edge Functions | [📄 `backend/README.md`](./backend/README.md) |
-| **n8n Automation Guide** | Workflows import, credentials setup, and database webhooks | [📄 `n8n-workflow/README.md`](./n8n-workflow/README.md) |
+| **n8n Automation Guide & Exports** | Workflows import, credentials setup, database webhooks & all-workflows JSON | [📄 `n8n-workflow/README.md`](./n8n-workflow/README.md) \| [📥 `n8n-all-workflows-export.json`](./n8n-workflow/n8n-all-workflows-export.json) |
 
 ---
 
 ## 📲 Android APK Installation & Testing Guide
 
 1. **Download the APK:**  
-   Tap [**Download `livewire-preview-v9.apk`**](https://expo.dev/artifacts/eas/j83x5g3tavK9wTmsrrwD-2N5KJZiO5MdWG6A-dpblpE.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/09688fe0-aea4-4dda-9f47-90e206bce03a).
+   Tap [**Download `livewire-preview-v13.apk`**](https://expo.dev/artifacts/eas/B8iU3O8h_E3iuRLIDDChccMapEi2FwfB9KAPx6xE7cc.apk) directly on your Android phone, or scan the QR code on the [EAS Build Page](https://expo.dev/accounts/shiva_2169/projects/livewire/builds/0461060b-1aff-4673-b9f9-d1114bca2104).
 2. **Install on Device:**  
    Open the downloaded file. When prompted, tap **Settings** and toggle **Allow from this source** (standard for internal distribution APKs).
 3. **Sign In with Demo Presets:**  
