@@ -539,3 +539,19 @@
   3. **Camera Flip Track Settings Disconnection:** In `@livekit/react-native-webrtc`, `_switchCamera` defaulted to `'user'` when track settings lacked facing mode keys. Implemented direct W3C `applyConstraints({ facingMode })` with a seamless `getUserMedia({ video: { facingMode } })` fallback that hot-swaps the camera track on all active peer senders without interrupting audio or terminating the connection.
 - Verified TypeScript compilation (`npx tsc --noEmit`) and web production export with 0 errors across 1,007 bundled modules.
 - Enqueued EAS Cloud Build #10 (`86e81853-6a38-4b38-85fe-098243c92954`) for universal Android release.
+
+### Turn 38: Android Hardware Camera Enumeration & Seamless Back/Front Sensor Swapping
+**User:**
+> "now in the mobile everything is working fine just the camera flip is not working if i click on camera flip it should use the back camera andd vice versa"
+
+**Action Taken:**
+- Verified user confirmation: Screen share, real-time video streaming, microphone audio, live chat, and presence are all working properly on the physical mobile app!
+- Investigated root cause for camera flip failure on native Android:
+  1. **Java `applyConstraints` Contract Limitation:** In `@livekit/react-native-webrtc`'s `CameraCaptureController.java`, `applyConstraints` explicitly rejects modifying `deviceId` or `facingMode` (documented in source as a constraint violation), retaining the initial camera sensor and returning success with no effect.
+  2. **Camera Hardware Lock Prevention:** On Android devices, opening a second camera capturer while the first is active triggers `ERROR_CAMERA_IN_USE`.
+- Architectural Solutions Applied:
+  1. **Dynamic Hardware Sensor Enumeration:** Query `mediaDevices.enumerateDevices()` on flip request to locate the physical `videoinput` device corresponding to the requested orientation (`environment`/back vs `front`/user).
+  2. **Ordered Hardware Release & Acquisition:** Atomically stop the previous video track to release Android CameraService hardware locks before instantiating the target sensor via `getUserMedia({ video: { deviceId } })`.
+  3. **Seamless Peer Sender Hot-Swap:** Retain the broadcaster's existing audio track and invoke `sender.replaceTrack(newVideoTrack)` on all active viewer peer connections, transmitting the flipped camera feed immediately without renegotiation or audio interruption.
+  4. **Active Preview Re-attachment:** Update `localStream` state with the newly acquired stream, resetting the native `RTCView` mirror property (`mirror={targetFacing === 'user'}`) to maintain natural preview orientation.
+- Verified TypeScript compilation and web production export with 0 errors across 1,007 bundled modules.
