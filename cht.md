@@ -575,3 +575,21 @@
   5. **Camera HAL Settling Guard:** Introduced an asynchronous settling delay in `LocalPreview.native.tsx` post `oldVideoTrack.stop()` prior to `getUserMedia` device acquisition to prevent Android CameraService hardware contention during rapid camera flip actions.
 - Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,008 bundled modules.
 
+### Turn 40: Remote Viewer Video Continuity & SDP Renegotiation on Camera Flip
+**User:**
+> "so now from the streaming from back camera worls but when iam watching the stream from other device it pauses when camera turn also fix it"
+
+**Action Taken:**
+- Investigated and diagnosed the root causes for remote viewer video freeze during broadcaster camera flipping:
+  1. **WebRTC Decoder Keyframe Starvation:** In `@livekit/react-native-webrtc`, when `sender.replaceTrack(newTrack)` is executed on Android without SDP renegotiation, the remote peer's hardware video decoder does not receive the necessary IDR keyframe and updated SPS/PPS parameter sets for the new camera sensor, resulting in the remote player freezing on the last decoded frame.
+  2. **Native Android WebRTCView Stagnation:** In `WebRTCView.java`, `setStreamURL` explicitly short-circuits if `Objects.equals(streamURL, this.streamURL)` is true. Because the viewer's `MediaStream.toURL()` tag remains unchanged during track replacement, Android's native `RTCVideoView` skips re-evaluating the stream's tracks, leaving the renderer bound to the previous (terminated) camera track.
+  3. **Re-request Suppression on Active Connection:** In `LocalPreview.native.tsx`, incoming stream requests were discarded if the peer connection was already in the `'connected'` state, preventing viewers from re-synchronizing after track swaps.
+- Architectural Solutions Applied:
+  1. **Broadcaster SDP Renegotiation on Flip:** In `LocalPreview.native.tsx` and `LocalPreview.web.tsx`, updated `switchCameraFacing` to execute `sender.replaceTrack(newVideoTrack)` followed immediately by SDP offer renegotiation (`createOffer() -> setLocalDescription() -> p2p_offer`) for every connected viewer, forcing the WebRTC engine to re-synchronize video codecs and emit an immediate IDR keyframe.
+  2. **Realtime Camera Flip Signaling:** Emitted a dedicated `camera_flipped` broadcast event across the Supabase Realtime channel, informing all viewer clients of the camera transition.
+  3. **Force Refresh Ingress:** Extended `handleRequestStream` on the broadcaster to accept `forceRefresh: true`, allowing connected peers to request a fresh SDP offer without destroying ICE state or interrupting audio.
+  4. **Dynamic Native Video Surface Remounting:** In `RemoteStage.native.tsx`, bound `<RTCView />` to a reactive `renderKey` (`key="remote-stage-view-${renderKey}-${p2pStream.toURL()}"`). On `camera_flipped`, `track.onunmute`, or renegotiated offer arrival, `renderKey` increments, unmounting the stale native renderer and instantiating a fresh `WebRTCView` that binds immediately to the active camera track.
+  5. **Web Ingress Continuity:** Updated `RemoteStage.web.tsx` to handle `camera_flipped` by re-binding `srcObject` and issuing `forceRefresh` stream requests.
+- Verified TypeScript compilation (`npx tsc --noEmit`) and Expo web production export (`npx expo export -p web`) with 0 errors across 1,009 bundled modules.
+
+
